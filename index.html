@@ -7,16 +7,16 @@
   <style>
     :root {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      --navy-dark: #020617;
-      --navy-deep: #0f172a;
-      --gray-silver: #b6c6dd;
-      --accent-blue: #2b91da;
+      --navy-dark: #0a0f1d;
+      --navy-deep: #111827;
+      --gray-silver: #94a3b8;
+      --accent-blue: #3b82f6;
       --accent-green: #10b981;
-      --accent-gold: #d4af37;
+      --accent-gold: #c5a059;
       --gold-glow: rgba(212, 175, 55, 0.3);
-      --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f1d27b 50%, #b8860b 100%);
-      --glass-bg: rgba(255, 255, 255, 0.05);
-      --glass-border: rgba(255, 255, 255, 0.12);
+      --gold-gradient: linear-gradient(135deg, #c5a059 0%, #e2c28d 50%, #a67c33 100%);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
       --sidebar-width: 260px;
     }
 
@@ -26,28 +26,29 @@
 
     body {
       margin: 0;
-      background: linear-gradient(rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.85)), 
+      background: radial-gradient(circle at center, #111827 0%, #020617 100%),
                   url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1920&q=80');
       background-size: cover;
       background-attachment: fixed;
+      background-blend-mode: overlay;
       color: #edf1f7;
       overflow-x: hidden;
     }
 
     #login-page {
-      display: flex; justify-content: center; padding: 20px;
+      display: flex; justify-content: center; align-items: center; padding: 20px;
       min-height: 100vh;
     }
 
     .page-shell {
       width: 100%;
-      max-width: 1240px;
-      border-radius: 32px;
+      max-width: 1100px;
+      border-radius: 40px;
       overflow: hidden;
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(15, 23, 42, 0.7);
       border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(25px);
+      box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5);
     }
 
     .page-header {
@@ -64,13 +65,13 @@
     .logo-box {
       width: 70px;
       height: 70px;
-      background: linear-gradient(145deg, #0f172a, #020617);
+      background: linear-gradient(145deg, #1e293b, #0f172a);
       border: 1px solid rgba(212, 175, 55, 0.4);
       border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 0 15px var(--gold-glow);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 15px var(--gold-glow);
       margin-bottom: 5px;
       position: relative;
       transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
@@ -101,7 +102,7 @@
       font-size: 2.2rem;
       letter-spacing: 0.02em;
       color: var(--accent-gold);
-      text-align: center;
+      font-weight: 800;
       text-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
 
@@ -122,11 +123,11 @@
     }
 
     .panel {
-      border-radius: 24px;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(212, 175, 55, 0.1);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       padding: 20px;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(5px);
       transition: 0.3s;
     }
 
@@ -145,7 +146,7 @@
       margin-bottom: 10px;
       padding: 20px;
       border-radius: 20px;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.05);
       box-shadow: 0 18px 40px rgba(29, 111, 181, 0.18);
       transition: border-color 0.3s;
@@ -157,7 +158,7 @@
 
     .login-form label {
       color: #eef4ff;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
@@ -166,7 +167,7 @@
       width: 100%;
       padding: 12px 15px;
       border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.05);
       background: rgba(0, 0, 0, 0.2);
       color: #fff;
       outline: none;
@@ -185,14 +186,14 @@
       background: var(--gold-gradient);
       color: #000;
       font-weight: 800;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       cursor: pointer;
-      transition: 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       text-transform: uppercase;
     }
 
     .login-form button:hover {
-      transform: scale(1.02);
+      transform: translateY(-2px);
       box-shadow: 0 0 20px var(--gold-glow);
     }
 
@@ -248,34 +249,36 @@
     #lawyer-dashboard {
       display: none;
       min-height: 100vh; /* Ensure it takes full height */
-      grid-template-columns: var(--sidebar-width) 1fr; /* تم تعديل الترتيب ليتوافق مع HTML (شريط جانبي أيسر) */
+      grid-template-columns: var(--sidebar-width) 1fr;
       background: #080f1a;
     }
 
     .sidebar {
-      background: #050b16;
+      background: #030712;
       border-right: 1px solid var(--glass-border);
       padding: 20px 15px;
       display: flex;
-      flex-direction: column; /* Changed to column for vertical stacking */
+      flex-direction: column;
       gap: 5px;
+      box-shadow: 10px 0 30px rgba(0,0,0,0.5);
     }
 
     .nav-item {
       padding: 14px 18px;
-      border-radius: 14px;
+      border-radius: 12px;
       color: var(--gray-silver);
       text-decoration: none;
       display: flex;
       align-items: center;
       gap: 15px;
-      transition: 0.3s;
+      transition: all 0.3s;
       cursor: pointer;
+      font-weight: 500;
     }
 
     .nav-item:hover, .nav-item.active {
-      background: linear-gradient(90deg, var(--accent-blue), transparent);
-      color: white;
+      background: rgba(255,255,255,0.05);
+      color: var(--accent-gold);
       border-right: 4px solid var(--accent-blue);
     }
 
@@ -296,22 +299,23 @@
     }
 
     .stat-card {
-      background: rgba(255,255,255,0.03);
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.4));
       padding: 24px;
-      border-radius: 24px;
+      border-radius: 28px;
       border: 1px solid var(--glass-border);
-      transition: 0.3s;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .stat-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); }
     .stat-card small { color: var(--gray-silver); font-size: 0.85rem; }
-    .stat-card .number { display: block; font-size: 2rem; font-weight: 800; margin-top: 5px; }
+    .stat-card .number { display: block; font-size: 2.2rem; font-weight: 800; margin-top: 5px; color: #fff; }
 
     .panel-section {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.4);
       border: 1px solid var(--glass-border);
-      border-radius: 28px;
+      border-radius: 32px;
       padding: 30px;
+      backdrop-filter: blur(10px);
     }
 
     .data-table {
@@ -324,6 +328,10 @@
       padding: 16px;
       text-align: right;
       border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .data-table tr:hover {
+      background: rgba(255,255,255,0.01);
     }
 
     /* تنسيق نموذج إدارة القضايا */
@@ -351,7 +359,7 @@
       border: 1px solid var(--glass-border);
       border-radius: 12px;
       padding: 12px 15px;
-      color: white;
+      color: #f8fafc;
       outline: none;
       transition: 0.3s;
       font-family: inherit;
@@ -388,24 +396,13 @@
 
     .action-btn {
       background: var(--accent-blue); color: white; border: none; padding: 8px 16px; 
-      border-radius: 10px; cursor: pointer; font-size: 0.9rem;
+      border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: 0.3s;
     }
 
     /* View Controller */
     body.in-dashboard #login-page { display: none; }
     body.in-dashboard #lawyer-dashboard { display: grid; }
-
-    .card-content h3 {
-      margin: 0 0 6px;
-      font-size: 1.05rem;
-      color: #f4f7ff;
-    }
-
-    .card-content span {
-      font-size: 0.95rem;
-      color: #a8b9d5;
-      line-height: 1.7;
-    }
 
     @media (max-width: 980px) {
       .grid { 
@@ -555,11 +552,105 @@
     }
     .zoom-btn:hover { transform: scale(1.15); background: #f1d27b; }
 
+    /* --- Client Portal Dashboard Styling --- */
+    #client-dashboard-ui {
+      display: none;
+      min-height: 100vh;
+      padding: 40px 20px;
+      background: radial-gradient(circle at top right, #0f172a, #020617);
+    }
+
+    .client-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .client-welcome-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 20px;
+    }
+
+    .client-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 25px;
+    }
+
+    .client-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+    }
+
+    .client-card h3 {
+      color: var(--accent-gold);
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 12px 0;
+      font-size: 0.95rem;
+    }
+
+    .info-label { color: var(--gray-silver); }
+    .info-value { font-weight: 600; color: #fff; }
+
+    .client-actions {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-gold { background: var(--gold-gradient); color: #000; font-weight: bold; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-gold:hover { transform: translateY(-3px); box-shadow: 0 5px 15px var(--gold-glow); }
+    
+    .btn-outline { background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 12px 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-outline:hover { background: rgba(212, 175, 55, 0.1); }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .whatsapp-btn { background: #25D366; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.25); }
+    .whatsapp-btn:hover { background: #128C7E; transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 30px rgba(37, 211, 102, 0.4); }
+    .facebook-btn { background: #1877F2; box-shadow: 0 10px 20px rgba(24, 119, 242, 0.25); }
+    .facebook-btn:hover { background: #0d65d9; transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 30px rgba(24, 119, 242, 0.4); }
+
+    @media (max-width: 768px) {
+      .client-grid { grid-template-columns: 1fr; }
+      .client-welcome-header { flex-direction: column; text-align: center; gap: 20px; }
+    }
+
   </style>
   <!-- Scripts for Export Functionality -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <!-- العلم السوري -->
@@ -629,6 +720,86 @@
     </div>
   </div>
 
+  <!-- واجهة الموكل الاحترافية -->
+  <div id="client-dashboard-ui">
+    <div class="client-container">
+      <div class="client-welcome-header">
+        <div>
+          <h1 style="margin:0; color:var(--accent-gold);">أهلاً بك، <span id="display-client-name">الموكل</span></h1>
+          <p style="color:var(--gray-silver); margin:5px 0;">مكتب المحامي محمد النزال يرحب بك ويضع قضيتك بين يديك</p>
+        </div>
+        <button class="action-btn" style="background:#ef4444;" onclick="location.reload()">تسجيل الخروج 🚪</button>
+      </div>
+
+      <div class="client-grid">
+        <!-- بطاقة تفاصيل القضية -->
+        <div class="client-card">
+          <h3>📂 تفاصيل الدعوى</h3>
+          <div id="client-case-details">
+            <p style="text-align:center; color:var(--gray-silver);">لا توجد دعوى نشطة حالياً</p>
+          </div>
+          <div class="client-actions">
+            <button class="btn-gold" onclick="exportClientCasePDF()">تنزيل ملف القضية 📄</button>
+            <button class="btn-outline" onclick="alert('سيتم عرض مذكرات الدعوى قريباً')">وثائق الدعوى 📑</button>
+            <button class="btn-outline" onclick="alert('سيتم عرض وثائق الخصم قريباً')">وثائق الخصم 👤</button>
+          </div>
+        </div>
+
+        <!-- بطاقة الوكالة والبيانات الشخصية -->
+        <div class="client-card">
+          <h3>📜 بيانات الوكالة</h3>
+          <div id="client-agency-details">
+            <p style="text-align:center; color:var(--gray-silver);">لا توجد وكالة مسجلة</p>
+          </div>
+          <h3 style="margin-top:20px;">👤 بياناتي الشخصية</h3>
+          <div id="client-personal-info"></div>
+        </div>
+
+        <!-- بطاقة التواصل المباشر والاستفسارات -->
+        <div class="client-card" style="grid-column: span 2;">
+          <h3>💬 تواصل مباشر مع المكتب</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            <div>
+              <p style="color: var(--gray-silver); font-size: 0.9rem; margin-bottom: 12px;">أرسل استفسارك وسيقوم المكتب بالرد عليك في أقرب وقت:</p>
+              <textarea id="client-inquiry-text" rows="4" placeholder="اكتب استفسارك هنا بالتفصيل..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; border-radius: 16px; padding: 15px; outline: none; transition: 0.3s;"></textarea>
+              <button class="btn-gold" style="width: 100%; margin-top: 10px;" onclick="sendInquiry()">إرسال الاستفسار للمحامي 📤</button>
+            </div>
+            <div id="client-message-history" style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 15px; max-height: 250px; overflow-y: auto;">
+              <h4 style="color:var(--accent-gold); margin: 0 0 10px 0; font-size: 0.9rem;">📜 أرشيف مراسلاتي وردود المكتب</h4>
+              <div id="client-messages-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px; justify-content: center; height: 100%;">
+              <p style="color: var(--gray-silver); font-size: 0.9rem; text-align: center;">أو تواصل معنا عبر منصات التواصل الاجتماعي:</p>
+              <a href="https://wa.me/963980348467" target="_blank" class="social-btn whatsapp-btn" style="justify-content: center;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                تواصل عبر واتساب
+              </a>
+              <a href="https://www.facebook.com/share/1CwwGqukBJ/" target="_blank" class="social-btn facebook-btn" style="justify-content: center;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                صفحة الفيسبوك الرسمية
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- جدول الجلسات -->
+      <div class="panel-section">
+        <h2 style="color:var(--accent-gold); border-bottom:1px solid rgba(212, 175, 55, 0.2); padding-bottom:10px;">📅 جدول جلساتك القادمة</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>المكان</th>
+              <th>الإجراء المتوقع / سبب التأجيل</th>
+            </tr>
+          </thead>
+          <tbody id="client-sessions-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- واجهة النظام الداخلي (Dashboard) -->
   <div id="lawyer-dashboard">
     <aside class="sidebar">
@@ -640,7 +811,8 @@
       <div class="nav-item" data-target="investigation-cases-section">🔍 قضايا التحقيق</div>
       <div class="nav-item" data-target="referral-cases-section">🔃 قضايا الإحالة</div>
       <div class="nav-item" data-target="sessions-management-section">📅 الجلسات القادمة</div>
-      <div class="nav-item">⚖️ التنفيذ</div>
+      <div class="nav-item" data-target="execution-management-section">⚖️ التنفيذ</div>
+      <div class="nav-item" data-target="messages-management-section">💬 رسائل الموكلين</div>
       <div class="nav-item">📑 دراسة الدعوى</div>
       <div class="nav-item">💰 الأتعاب</div>
       <div class="nav-item">🔔 آخر الأخبار والتحديثات</div>
@@ -657,7 +829,6 @@
             <h1 style="margin:0">لوحة التحكم</h1>
             <span style="color: var(--gray-silver)">مرحباً بك مجدداً، أستاذ محمد النزال</span>
           </div>
-          <button class="action-btn" style="padding: 12px 24px;">+ إضافة قضية جديدة</button>
         </header>
 
         <div class="stat-row">
@@ -668,9 +839,8 @@
         </div>
 
         <div class="panel-section">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:block;">
             <h2 style="margin:0">آخر التحديثات</h2>
-            <button class="action-btn" style="background:var(--accent-green)" onclick="window.location.href='client_portal_registration.html'">+ تسجيل موكل جديد</button>
           </div>
           <table class="data-table">
             <thead>
@@ -760,7 +930,7 @@
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
               <div class="form-group">
                 <label for="client-full-name">اسم الموكل الكامل</label>
-                <input type="text" id="client-full-name" name="client-full-name" placeholder="اسم الموكل" required>
+                <input type="text" id="client-full-name" name="client-full-name" list="clients-datalist" placeholder="اسم الموكل" required>
               </div>
               <div class="form-group">
                 <label for="client-role">الصفة</label>
@@ -784,7 +954,7 @@
               <input type="file" id="case-attachments" name="case-attachments" multiple>
             </div>
           </div>
-          <button type="submit" class="action-btn" style="margin-top: 20px;" onclick="alert('تم حفظ القضية بنجاح!'); return false;">حفظ القضية</button>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveGeneralCase()">حفظ القضية</button>
         </form>
       </section>
 
@@ -1190,7 +1360,128 @@
         </div>
       </section>
 
+      <!-- قسم إدارة التنفيذ (Execution Management) -->
+      <section id="execution-management-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">إدارة ملفات التنفيذ</h2>
+        <form class="case-form" id="execution-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>اسم الموكل</label>
+              <input type="text" id="exe-client" list="clients-datalist" placeholder="ابدأ بكتابة اسم الموكل..." required>
+            </div>
+            <div class="form-group">
+              <label>صفة الموكل</label>
+              <select id="exe-client-role" required>
+                <option value="" disabled selected>اختر الصفة</option>
+                <option value="الجهة طالبة التنفيذ">الجهة طالبة التنفيذ</option>
+                <option value="الجهة المطلوب التنفيذ ضدها">الجهة المطلوب التنفيذ ضدها</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-triple">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+              <div class="form-group">
+                <label>رقم الأساس</label>
+                <input type="text" id="exe-base" placeholder="رقم الأساس" required>
+              </div>
+              <div class="form-group">
+                <label>العام</label>
+                <input type="text" id="exe-year" placeholder="2024" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>نوع ملف التنفيذ</label>
+              <select id="exe-type" required>
+                <option value="مدني">مدني</option>
+                <option value="جزائي">جزائي</option>
+                <option value="شرعي">شرعي</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>اسم الخصم</label>
+              <input type="text" id="exe-opponent" placeholder="اسم الخصم" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>صفة الخصم</label>
+              <select id="exe-opponent-role" required>
+                <option value="" disabled selected>اختر صفة الخصم</option>
+                <option value="الجهة طالبة التنفيذ">الجهة طالبة التنفيذ</option>
+                <option value="الجهة المطلوب التنفيذ ضدها">الجهة المطلوب التنفيذ ضدها</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>الإجراء المتخذ</label>
+              <input type="text" id="exe-action-taken" placeholder="آخر إجراء تم القيام به">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>الإجراء القادم</label>
+            <input type="text" id="exe-action-next" placeholder="ما هو الإجراء التالي المطلوب؟">
+          </div>
+          <div class="form-group full-width">
+            <label>ملاحظات</label>
+            <textarea id="exe-notes" rows="3" placeholder="ملاحظات إضافية حول ملف التنفيذ"></textarea>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveExecutionCase()">حفظ ملف التنفيذ</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0">سجل القضايا التنفيذية</h3>
+            <input type="text" id="execution-search" placeholder="بحث سريع (الموكل، الخصم، الأساس)..." oninput="updateExecutionTable()" 
+                   style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+            <div style="display:flex; gap:10px;">
+              <button class="action-btn" style="background:#16a34a" onclick="exportExecutionsToExcel()">تصدير Excel 📊</button>
+              <button class="action-btn" style="background:#dc2626" onclick="exportExecutionsToPDF()">تصدير PDF 📄</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل</th>
+                <th>الأساس</th>
+                <th>نوع الملف</th>
+                <th>الخصم</th>
+                <th>الإجراء القادم</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="execution-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- قسم رسائل الموكلين (Client Messages) -->
+      <section id="messages-management-section" class="panel-section" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+          <h2 style="margin:0;">💬 استفسارات ورسائل الموكلين</h2>
+          <button class="action-btn" style="background:#ef4444;" onclick="if(confirm('هل تريد حذف جميع الرسائل؟')){localStorage.removeItem('portal_messages'); updateMessagesTable();}">حذف الكل 🗑️</button>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل</th>
+                <th>التاريخ</th>
+                <th>الرسالة</th>
+                <th>الحالة</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="messages-table-body">
+              <!-- سيتم ملؤه بواسطة JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
+
+    <!-- قائمة الموكلين المشتركة لجميع النماذج -->
+    <datalist id="clients-datalist"></datalist>
   </div>
 
   <!-- نافذة منبثقة لعرض صورة الوكالة -->
@@ -1260,6 +1551,7 @@
     let editingAgencyIndex = -1;
     let editingReferralIndex = -1;
     let editingSessionIndex = -1;
+    let editingExecutionIndex = -1;
 
     // وظائف إدارة الموكلين
     function addClient() {
@@ -1364,10 +1656,148 @@
       const client = clients.find(c => c.username === user && c.password === pass);
 
       if (client) {
-        alert("مرحباً بك " + client.fullname + " في بوابة الموكلين.");
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('client-dashboard-ui').style.display = 'block';
+        document.getElementById('display-client-name').textContent = client.fullname;
+        loadClientPortalData(client);
       } else {
         alert("خطأ: اسم المستخدم أو كلمة المرور غير صحيحة للموكل.");
       }
+    }
+
+    // تحميل بيانات الموكل وربطها
+    function loadClientPortalData(client) {
+      // 1. البيانات الشخصية
+      document.getElementById('client-personal-info').innerHTML = `
+        <div class="info-row"><span class="info-label">الهاتف:</span><span class="info-value">${client.phone}</span></div>
+        <div class="info-row"><span class="info-label">العنوان:</span><span class="info-value">${client.address}</span></div>
+      `;
+
+      // 2. البحث عن القضية (تحقيق أو إحالة)
+      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+      const exeCases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      
+      let myCaseData = invCases.find(c => c.client === client.fullname) || 
+                   refCases.find(c => c.client === client.fullname) ||
+                   exeCases.find(c => c.client === client.fullname);
+
+      if (myCaseData && !myCaseData.dept && myCaseData.type) { // إذا كانت قضية تنفيذ
+        myCaseData.dept = myCaseData.type; 
+        myCaseData.city = "ملف تنفيذي";
+        myCaseData.subject = "متابعة إجراءات التنفيذ";
+      }
+
+      const caseContainer = document.getElementById('client-case-details');
+      if (myCaseData) {
+        caseContainer.innerHTML = `
+          <div class="info-row"><span class="info-label">المحكمة:</span><span class="info-value">${myCaseData.dept}</span></div>
+          <div class="info-row"><span class="info-label">رقم الأساس:</span><span class="info-value">${myCaseData.base} / ${myCaseData.year}</span></div>
+          <div class="info-row"><span class="info-label">المدينة:</span><span class="info-value">${myCaseData.city}</span></div>
+          <div class="info-row"><span class="info-label">موضوع الدعوى:</span><span class="info-value">${myCaseData.subject || myCaseData.crime}</span></div>
+          <div class="info-row"><span class="info-label">اسم الخصم:</span><span class="info-value">${myCaseData.opponent || 'لا يوجد خصم محدد'}</span></div>
+          
+        `;
+        window.currentClientCase = myCaseData;
+      }
+
+      // 3. البحث عن الوكالة
+      const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
+      const myAgency = agencies.find(a => a.clientName === client.fullname);
+      if (myAgency) {
+        document.getElementById('client-agency-details').innerHTML = `
+          <div class="info-row"><span class="info-label">نوع الوكالة:</span><span class="info-value">${myAgency.type} (${myAgency.scope})</span></div>
+          <div class="info-row"><span class="info-label">تاريخ التنظيم:</span><span class="info-value">${myAgency.date}</span></div>
+          <div class="info-row"><span class="info-label">مكان التنظيم:</span><span class="info-value">${myAgency.place}</span></div>
+        `;
+      }
+
+      // 4. جدول الجلسات
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+      const mySessions = sessions.filter(s => s.caseRef.includes(client.fullname))
+                                 .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      const sessionTbody = document.getElementById('client-sessions-table');
+      sessionTbody.innerHTML = '';
+      mySessions.forEach(s => {
+        sessionTbody.innerHTML += `
+          <tr>
+            <td style="color:var(--accent-gold); font-weight:bold;">${s.date} ${s.time ? `| ${s.time}` : ''}</td>
+            <td>${s.court}</td>
+            <td style="color:var(--gray-silver)">${s.notes || 'بانتظار الإجراء'}</td>
+          </tr>
+        `;
+      });
+
+      // 5. تحديث قائمة الرسائل والردود
+      updateClientMessagesList(client.fullname);
+    }
+
+    function updateClientMessagesList(clientName) {
+      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+      const list = document.getElementById('client-messages-list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      const myMessages = messages.filter(m => m.from === clientName).sort((a, b) => b.timestamp - a.timestamp);
+
+      myMessages.forEach(m => {
+        let html = `<div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border-right:3px solid var(--accent-blue);">
+          <div style="color:var(--gray-silver); font-size:0.75rem; margin-bottom:5px;">${m.date}</div>
+          <div style="font-size:0.85rem;">${m.message}</div>`;
+        if (m.reply) {
+          html += `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.1); color:var(--accent-gold); font-size:0.85rem;">
+            <strong>رد المكتب (${m.replyDate}):</strong><br>${m.reply}
+          </div>`;
+        }
+        html += `</div>`;
+        list.innerHTML += html;
+      });
+    }
+
+    function exportClientCasePDF() {
+      const clientName = document.getElementById('display-client-name').textContent;
+      const element = document.getElementById('client-dashboard-ui');
+      
+      const opt = {
+        margin: 0.5,
+        filename: `قضية_${clientName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      // إخفاء أزرار تسجيل الخروج والتنزيل مؤقتاً أثناء التصدير
+      const buttons = document.querySelectorAll('.client-actions, .action-btn');
+      buttons.forEach(b => b.style.visibility = 'hidden');
+      
+      html2pdf().set(opt).from(element).save().then(() => {
+        buttons.forEach(b => b.style.visibility = 'visible');
+      });
+    }
+
+    function sendInquiry() {
+      const text = document.getElementById('client-inquiry-text').value;
+      if (!text.trim()) {
+        alert("يرجى كتابة نص الاستفسار أولاً.");
+        return;
+      }
+      
+      const clientName = document.getElementById('display-client-name').textContent;
+      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+      
+      messages.push({
+        from: clientName,
+        message: text,
+        date: new Date().toLocaleString('ar-EG'),
+        timestamp: new Date().getTime(),
+        status: 'new'
+      });
+      
+      localStorage.setItem('portal_messages', JSON.stringify(messages));
+      document.getElementById('client-inquiry-text').value = '';
+      updateClientMessagesList(clientName);
+      alert("تم إرسال استفسارك للمكتب بنجاح. سنرد عليك في أقرب وقت.");
     }
 
     // دالة التصدير إلى ملف Excel
@@ -1396,8 +1826,6 @@
 
     // دالة التصدير إلى ملف PDF
     function exportToPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
       const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
       
       if (clients.length === 0) {
@@ -1405,19 +1833,32 @@
         return;
       }
 
-      // ملاحظة تقنية: دعم العربية في PDF يتطلب تضمين خطوط (TTF) مخصصة بصيغة Base64.
-      // الكود أدناه يولد الجدول بالبيانات المتاحة.
-      const body = clients.map(c => [c.username, c.phone, c.address, c.fullname]);
+      // نستخدم html2pdf لالتقاط الجدول كما هو في الصفحة لضمان سلامة الخط العربي
+      const table = document.getElementById('clients-table-body').closest('table');
+      const clone = table.cloneNode(true);
       
-      doc.autoTable({
-        head: [['المستخدم', 'الهاتف', 'العنوان', 'الاسم']],
-        body: body,
-        styles: { font: 'courier', halign: 'right' }, // استخدام خط افتراضي
-        headStyles: { fillColor: [43, 145, 218] },
-        theme: 'striped'
+      // تنظيف النسخة: حذف عمود "إجراء" وتعديل الألوان للطباعة
+      clone.querySelectorAll('tr').forEach(tr => {
+        if (tr.lastElementChild) tr.lastElementChild.remove();
+        Array.from(tr.cells).forEach(cell => cell.style.color = 'black');
       });
 
-      doc.save("الموكلين_مكتب_النزال.pdf");
+      const container = document.createElement('div');
+      container.style.padding = '20px';
+      container.style.direction = 'rtl';
+      container.style.background = 'white';
+      container.innerHTML = `<h2 style="text-align:center; color:#2b91da; font-family:sans-serif; margin-bottom:20px;">قائمة الموكلين - مكتب المحامي محمد النزال</h2>`;
+      container.appendChild(clone);
+
+      const opt = {
+        margin: 0.5,
+        filename: 'الموكلين_مكتب_النزال.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(container).save();
     }
 
     // وظائف إدارة الوكالات
@@ -1831,6 +2272,226 @@
       }
     }
 
+    // وظائف إدارة التنفيذ
+    function saveExecutionCase() {
+      const caseData = {
+        client: document.getElementById('exe-client').value,
+        clientRole: document.getElementById('exe-client-role').value,
+        base: document.getElementById('exe-base').value,
+        year: document.getElementById('exe-year').value,
+        type: document.getElementById('exe-type').value,
+        opponent: document.getElementById('exe-opponent').value,
+        opponentRole: document.getElementById('exe-opponent-role').value,
+        actionTaken: document.getElementById('exe-action-taken').value,
+        actionNext: document.getElementById('exe-action-next').value,
+        notes: document.getElementById('exe-notes').value,
+        timestamp: new Date().getTime()
+      };
+
+      if (!caseData.client || !caseData.base || !caseData.year) {
+        alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
+        return;
+      }
+
+      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+
+      if (editingExecutionIndex === -1) {
+        cases.push(caseData);
+        alert("تم حفظ ملف التنفيذ بنجاح!");
+      } else {
+        cases[editingExecutionIndex] = caseData;
+        alert("تم تحديث ملف التنفيذ بنجاح!");
+        editingExecutionIndex = -1;
+        document.querySelector('#execution-form .action-btn').textContent = "إضافة ملف تنفيذ";
+      }
+
+      localStorage.setItem('portal_executions', JSON.stringify(cases));
+      document.getElementById('execution-form').reset();
+      updateExecutionTable();
+    }
+
+    function updateExecutionTable() {
+      const searchTerm = (document.getElementById('execution-search')?.value || '').toLowerCase();
+      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      const tbody = document.getElementById('execution-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const filtered = cases.filter(c => 
+        c.client.toLowerCase().includes(searchTerm) || 
+        c.opponent.toLowerCase().includes(searchTerm) || 
+        c.base.includes(searchTerm)
+      );
+
+      filtered.reverse().forEach((c) => {
+        const originalIndex = cases.indexOf(c);
+        tbody.innerHTML += `<tr>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client}<br><small style="color:var(--gray-silver)">${c.clientRole}</small></td>
+          <td>${c.base}/${c.year}</td>
+          <td><span class="status-badge status-active">${c.type}</span></td>
+          <td>${c.opponent}</td>
+          <td style="color:var(--accent-blue)">${c.actionNext || '-'}</td>
+          <td>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editExecutionCase(${originalIndex})">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteExecutionCase(${originalIndex})">حذف</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function editExecutionCase(index) {
+      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      const c = cases[index];
+      if (!c) return;
+
+      editingExecutionIndex = index;
+      document.getElementById('exe-client').value = c.client;
+      document.getElementById('exe-client-role').value = c.clientRole;
+      document.getElementById('exe-base').value = c.base;
+      document.getElementById('exe-year').value = c.year;
+      document.getElementById('exe-type').value = c.type;
+      document.getElementById('exe-opponent').value = c.opponent;
+      document.getElementById('exe-opponent-role').value = c.opponentRole;
+      document.getElementById('exe-action-taken').value = c.actionTaken;
+      document.getElementById('exe-action-next').value = c.actionNext;
+      document.getElementById('exe-notes').value = c.notes;
+
+      document.querySelector('#execution-form .action-btn').textContent = "تحديث ملف التنفيذ";
+      document.getElementById('execution-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteExecutionCase(index) {
+      if (confirm("هل أنت متأكد من حذف هذا الملف التنفيذي؟")) {
+        const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+        cases.splice(index, 1);
+        localStorage.setItem('portal_executions', JSON.stringify(cases));
+        updateExecutionTable();
+      }
+    }
+
+    // وظائف إدارة رسائل الموكلين
+    function updateMessagesTable() {
+      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+      const tbody = document.getElementById('messages-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      // إضافة فهرس أصلي للحذف والتعديل، ثم العرض حسب التاريخ (الأحدث أولاً)
+      const indexed = messages.map((m, i) => ({...m, originalIndex: i}));
+      indexed.sort((a, b) => b.timestamp - a.timestamp);
+
+      indexed.forEach((m) => {
+        const statusBadge = m.status === 'new' ? '<span class="status-badge status-new">جديدة</span>' : '<span class="status-badge status-active">مقروءة</span>';
+        tbody.innerHTML += `<tr>
+          <td style="color:var(--accent-gold); font-weight:600;">${m.from}</td>
+          <td style="font-size:0.85rem">${m.date}</td>
+          <td style="white-space: normal; max-width: 400px; line-height: 1.5;">
+            ${m.message}
+            ${m.reply ? `<div style="margin-top:5px; color:var(--accent-gold); font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:3px;"><strong>ردك:</strong> ${m.reply}</div>` : ''}
+          </td>
+          <td>${statusBadge}</td>
+          <td>
+            <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="replyToMessage(${m.originalIndex})">رد</button>
+            ${m.status === 'new' ? `<button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="markMessageRead(${m.originalIndex})">مقروءة</button>` : ''}
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteMessage(${m.originalIndex})">حذف</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function replyToMessage(index) {
+      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+      const currentMessage = messages[index];
+      if (!currentMessage) return;
+
+      const replyText = prompt(`الرد على استفسار ${currentMessage.from}:`, currentMessage.reply || "");
+      
+      if (replyText !== null && replyText.trim() !== "") {
+        messages[index].reply = replyText;
+        messages[index].replyDate = new Date().toLocaleString('ar-EG');
+        messages[index].status = 'read'; // تعيين كقراءة تلقائياً عند الرد
+        localStorage.setItem('portal_messages', JSON.stringify(messages));
+        updateMessagesTable();
+        alert("تم إرسال الرد بنجاح.");
+      }
+    }
+
+    function markMessageRead(index) {
+      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+      if(messages[index]) messages[index].status = 'read';
+      localStorage.setItem('portal_messages', JSON.stringify(messages));
+      updateMessagesTable();
+    }
+
+    function deleteMessage(index) {
+      if (confirm("هل أنت متأكد من حذف هذه الرسالة؟")) {
+        const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
+        messages.splice(index, 1);
+        localStorage.setItem('portal_messages', JSON.stringify(messages));
+        updateMessagesTable();
+      }
+    }
+
+    function exportExecutionsToExcel() {
+      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      if (cases.length === 0) {
+        alert("لا توجد بيانات قضايا تنفيذية لتصديرها.");
+        return;
+      }
+      
+      const data = cases.map(c => ({
+        "الموكل": c.client,
+        "صفة الموكل": c.clientRole,
+        "رقم الأساس": c.base,
+        "العام": c.year,
+        "نوع الملف": c.type,
+        "الخصم": c.opponent,
+        "صفة الخصم": c.opponentRole,
+        "الإجراء المتخذ": c.actionTaken,
+        "الإجراء القادم": c.actionNext,
+        "ملاحظات": c.notes
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "القضايا التنفيذية");
+      XLSX.writeFile(wb, "القضايا_التنفيذية_مكتب_النزال.xlsx");
+    }
+
+    function exportExecutionsToPDF() {
+      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      
+      if (cases.length === 0) {
+        alert("لا توجد بيانات قضايا تنفيذية لتصديرها.");
+        return;
+      }
+
+      const table = document.getElementById('execution-table-body').closest('table');
+      const clone = table.cloneNode(true);
+
+      clone.querySelectorAll('tr').forEach(tr => {
+        if (tr.lastElementChild) tr.lastElementChild.remove();
+        Array.from(tr.cells).forEach(cell => cell.style.color = 'black');
+      });
+
+      const container = document.createElement('div');
+      container.style.padding = '20px';
+      container.style.direction = 'rtl';
+      container.style.background = 'white';
+      container.innerHTML = `<h2 style="text-align:center; color:#2b91da; font-family:sans-serif; margin-bottom:20px;">سجل القضايا التنفيذية - مكتب المحامي محمد النزال</h2>`;
+      container.appendChild(clone);
+
+      const opt = {
+        margin: 0.5,
+        filename: 'القضايا_التنفيذية_مكتب_النزال.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(container).save();
+    }
+
     // وظائف إدارة الجلسات
     function populateAllCasesDatalist() {
       const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
@@ -2000,20 +2661,54 @@
       printWindow.document.close();
     }
 
+    // وظيفة حفظ القضايا العامة (إدارة القضايا) وربطها بالموكلين
+    function saveGeneralCase() {
+      const caseData = {
+        court: document.getElementById('court').value,
+        base: document.getElementById('case-number').value,
+        year: document.getElementById('case-year').value,
+        city: document.getElementById('city').value,
+        type: document.getElementById('case-type').value,
+        subject: document.getElementById('case-subject').value,
+        opponent: document.getElementById('opponent').value,
+        opponentRole: document.getElementById('opponent-role').value,
+        client: document.getElementById('client-full-name').value,
+        clientRole: document.getElementById('client-role').value,
+        firstSession: document.getElementById('first-session-date').value,
+        timestamp: new Date().getTime(),
+        clientStatus: 'نشطة',
+        typeLabel: 'عامة'
+      };
+
+      if (!caseData.client || !caseData.base || !caseData.year) {
+        alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
+        return;
+      }
+
+      const cases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]');
+      cases.push(caseData);
+      localStorage.setItem('portal_general_cases', JSON.stringify(cases));
+      
+      alert('تم حفظ القضية بنجاح وربطها بالموكل!');
+      document.querySelector('#case-management-section form').reset();
+      refreshDashboardData();
+    }
+
     // وظيفة تحديث بيانات لوحة التحكم الرئيسية (الإحصائيات وآخر التحديثات)
     function refreshDashboardData() {
       const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]').map(c => ({...c, typeLabel: 'تحقيق'}));
       const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]').map(c => ({...c, typeLabel: 'إحالة'}));
+      const genCases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]').map(c => ({...c, typeLabel: 'عامة'}));
+      const exeCases = JSON.parse(localStorage.getItem('portal_executions') || '[]').map(c => ({...c, typeLabel: 'تنفيذ', dept: c.type, crime: 'أساس: ' + c.base}));
       const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
       const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
       
-      // دمج كافة القضايا وفرزها حسب التوقيت الزمني (الأحدث أولاً)
-      const allCases = [...invCases, ...refCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const allCases = [...invCases, ...refCases, ...genCases, ...exeCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       
       // تحديث البطاقات الإحصائية (Stat Cards)
       const stats = document.querySelectorAll('.stat-card .number');
       if (stats.length >= 4) {
-        stats[0].textContent = invCases.length + refCases.length; // إجمالي القضايا
+        stats[0].textContent = allCases.length; // إجمالي القضايا
         stats[1].textContent = allCases.filter(c => c.clientStatus === 'موقوف').length; // قضايا قيد النظر (موقوفين)
         const today = new Date().toISOString().split('T')[0];
         stats[2].textContent = sessions.filter(s => s.date === today).length; // جلسات اليوم
@@ -2032,12 +2727,12 @@
           <tr>
             <td>${c.base}/${c.year}</td>
             <td style="font-weight:600;">${c.client}</td>
-            <td>${c.typeLabel} - ${c.crime}</td>
-            <td>${c.dept}</td>
-            <td><span class="status-badge ${statusClass}">${c.clientStatus}</span></td>
+            <td>${c.typeLabel} - ${c.crime || c.type || ''}</td>
+            <td>${c.dept || c.court || ''}</td>
+            <td><span class="status-badge ${statusClass}">${c.clientStatus || 'نشطة'}</span></td>
             <td>
               <button class="action-btn" style="background:none; border:1px solid var(--accent-blue); color:var(--accent-blue);" 
-                onclick="showSection('${c.typeLabel === 'تحقيق' ? 'investigation-cases-section' : 'referral-cases-section'}')">
+                onclick="showSection('${c.typeLabel === 'تحقيق' ? 'investigation-cases-section' : c.typeLabel === 'إحالة' ? 'referral-cases-section' : c.typeLabel === 'عامة' ? 'case-management-section' : 'execution-management-section'}')">
                 تفاصيل
               </button>
             </td>
@@ -2063,13 +2758,15 @@
       }
       
       // تحديث قائمة الموكلين في كافة الأقسام التي تحتاج إكمال تلقائي
-      if (['agencies-management-section', 'investigation-cases-section', 'referral-cases-section', 'sessions-management-section'].includes(sectionId)) {
+      if (['case-management-section', 'agencies-management-section', 'investigation-cases-section', 'referral-cases-section', 'sessions-management-section', 'execution-management-section', 'messages-management-section'].includes(sectionId)) {
         populateClientsDatalist();
         if (sectionId === 'sessions-management-section') populateAllCasesDatalist();
         if (sectionId === 'agencies-management-section') updateAgenciesTable();
         if (sectionId === 'investigation-cases-section') updateInvestigationTable();
         if (sectionId === 'referral-cases-section') updateReferralTable();
         if (sectionId === 'sessions-management-section') updateSessionsTable();
+        if (sectionId === 'execution-management-section') updateExecutionTable();
+        if (sectionId === 'messages-management-section') updateMessagesTable();
       }
 
       // Update active state in sidebar
