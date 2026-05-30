@@ -555,12 +555,11 @@
     }
     .zoom-btn:hover { transform: scale(1.15); background: #f1d27b; }
 
-    /* Scripts for Export Functionality */
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
   </style>
+  <!-- Scripts for Export Functionality -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <!-- العلم السوري -->
@@ -1637,7 +1636,6 @@
         recNum: document.getElementById('inv-rec-num').value,
         recDate: document.getElementById('inv-rec-date').value,
         recPlace: document.getElementById('inv-rec-place').value,
-        prosNum: document.getElementById('inv-pros-num').value
         prosNum: document.getElementById('inv-pros-num').value,
         timestamp: new Date().getTime()
       };
@@ -1745,7 +1743,6 @@
         dept: document.getElementById('ref-dept').value,
         city: document.getElementById('ref-city').value,
         crime: document.getElementById('ref-crime').value,
-        subject: document.getElementById('ref-subject').value
         subject: document.getElementById('ref-subject').value,
         timestamp: new Date().getTime()
       };
