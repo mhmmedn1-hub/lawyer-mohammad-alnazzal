@@ -664,6 +664,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script>
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY", // استبدل بـ مفتاح API الخاص بك
+      authDomain: "YOUR_AUTH_DOMAIN", // استبدل بـ نطاق المصادقة الخاص بك
+      projectId: "YOUR_PROJECT_ID", // استبدل بـ معرف المشروع الخاص بك
+      storageBucket: "YOUR_STORAGE_BUCKET", // استبدل بـ سلة التخزين الخاصة بك
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // استبدل بـ معرف مرسل الرسائل الخاص بك
+      appId: "YOUR_APP_ID", // استبدل بـ معرف التطبيق الخاص بك
+      measurementId: "YOUR_MEASUREMENT_ID" // استبدل بـ معرف القياس الخاص بك (اختياري)
+    };
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
 </head>
 <body>
   <!-- العلم السوري -->
@@ -1665,15 +1687,14 @@
       );
 
       filtered.forEach((client) => {
-        const originalIndex = clients.indexOf(client); // العثور على الفهرس الأصلي للحذف الصحيح
         const row = `<tr>
           <td>${client.fullname}</td>
           <td>${client.address}</td>
           <td>${client.phone}</td>
           <td>${client.username}</td>
           <td>
-            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editClient(${originalIndex})">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteClient(${originalIndex})">حذف</button>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editClient('${client.id}')">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteClient('${client.id}')">حذف</button>
           </td>
         </tr>`;
         tbody.innerHTML += row;
@@ -1702,32 +1723,41 @@
       document.getElementById('c-whatsapp').value = client.whatsapp;
       document.getElementById('c-username').value = client.username;
       document.getElementById('c-password').value = client.password;
-      document.getElementById('c-password').type = 'text';
-      document.querySelector('#client-form .toggle-password').innerHTML = eyeOffIcon;
+      document.getElementById('c-password').type = 'password'; // لا يجب عرض كلمة المرور
+      document.querySelector('#client-form .toggle-password').innerHTML = eyeIcon; // إعادة تعيين الأيقونة
 
-      document.querySelector('#client-form .action-btn').textContent = "تحديث بيانات الموكل";
+      document.querySelector('#client-form .action-btn').textContent = "حفظ وتحديث في السحابة ☁️";
       document.getElementById('client-form').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function handleClientLogin() {
-      const user = document.getElementById('client-user').value.trim();
+    async function handleClientLogin() {
+      const email = document.getElementById('client-user').value.trim(); // يجب أن يكون بريد إلكتروني
       const pass = document.getElementById('client-pass').value.trim();
       
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
-      const client = clients.find(c => c.username.toLowerCase() === user.toLowerCase() && c.password === pass);
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+        const user = userCredential.user;
 
-      if (client) {
-        document.getElementById('login-page').style.display = 'none';
-        document.getElementById('client-dashboard-ui').style.display = 'block';
-        document.getElementById('display-client-name').textContent = client.fullname;
-        loadClientPortalData(client);
-      } else {
-        alert("خطأ: اسم المستخدم أو كلمة المرور غير صحيحة للموكل.");
+        const clientDoc = await db.collection('clients').doc(user.uid).get();
+        if (clientDoc.exists) {
+          const clientData = clientDoc.data();
+          document.getElementById('login-page').style.display = 'none';
+          document.getElementById('client-dashboard-ui').style.display = 'block';
+          document.getElementById('display-client-name').textContent = clientData.fullname;
+          loadClientPortalData(clientData);
+          alert("تم تسجيل الدخول بنجاح!");
+        } else {
+          alert("خطأ: لم يتم العثور على بيانات الموكل في قاعدة البيانات.");
+          await auth.signOut(); // تسجيل الخروج من المصادقة إذا لم يتم العثور على بيانات الموكل
+        }
+      } catch (error) {
+        console.error("Firebase Client Login Error:", error);
+        alert("خطأ في تسجيل الدخول: " + error.message);
       }
     }
 
-    // تحميل بيانات الموكل وربطها
-    function loadClientPortalData(client) {
+    // تحميل بيانات الموكل وربطها (تحتاج لتعديل لجلب البيانات من Firestore)
+    async function loadClientPortalData(client) {
       // 1. البيانات الشخصية
       document.getElementById('client-personal-info').innerHTML = `
         <div class="info-row"><span class="info-label">الهاتف:</span><span class="info-value">${client.phone}</span></div>
@@ -1735,16 +1765,16 @@
       `;
 
       // 2. البحث عن القضية (تحقيق أو إحالة)
-      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
-      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
-      const exeCases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
-      const genCases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]');
+      const invCasesSnapshot = await db.collection('investigations').where('client', '==', client.fullname).get();
+      const refCasesSnapshot = await db.collection('referrals').where('client', '==', client.fullname).get();
+      const exeCasesSnapshot = await db.collection('executions').where('client', '==', client.fullname).get();
+      const genCasesSnapshot = await db.collection('generalCases').where('client', '==', client.fullname).get();
       
       // جمع كافة القضايا المطابقة من جميع الأقسام
-      const myInv = invCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'تحقيق'}));
-      const myRef = refCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'إحالة'}));
-      const myExe = exeCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'تنفيذ', dept: c.type, city: "ملف تنفيذي", subject: "متابعة إجراءات التنفيذ"}));
-      const myGen = genCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'عامة', dept: c.court}));
+      const myInv = invCasesSnapshot.docs.map(doc => ({...doc.data(), category: 'تحقيق'}));
+      const myRef = refCasesSnapshot.docs.map(doc => ({...doc.data(), category: 'إحالة'}));
+      const myExe = exeCasesSnapshot.docs.map(doc => ({...doc.data(), category: 'تنفيذ', dept: doc.data().type, city: "ملف تنفيذي", subject: "متابعة إجراءات التنفيذ"}));
+      const myGen = genCasesSnapshot.docs.map(doc => ({...doc.data(), category: 'عامة', dept: doc.data().court}));
       
       const allMyCases = [...myInv, ...myRef, ...myExe, ...myGen];
 
@@ -1767,8 +1797,8 @@
       }
 
       // 3. البحث عن الوكالة
-      const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
-      const myAgency = agencies.find(a => a.clientName === client.fullname);
+      const agencySnapshot = await db.collection('agencies').where('clientName', '==', client.fullname).limit(1).get();
+      const myAgency = agencySnapshot.empty ? null : agencySnapshot.docs[0].data();
       if (myAgency) {
         document.getElementById('client-agency-details').innerHTML = `
           <div class="info-row"><span class="info-label">نوع الوكالة:</span><span class="info-value">${myAgency.type} (${myAgency.scope})</span></div>
@@ -1778,9 +1808,9 @@
       }
 
       // 4. جدول الجلسات
-      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
-      const mySessions = sessions.filter(s => s.caseRef.includes(client.fullname))
-                                 .sort((a, b) => new Date(a.date) - new Date(b.date));
+      const sessionsSnapshot = await db.collection('sessions').where('caseRef', 'array-contains', client.fullname).orderBy('date').get();
+      // ملاحظة: إذا كان caseRef سلسلة نصية، ستحتاج إلى جلب كل الجلسات وتصفيتها محليًا أو استخدام استعلامات أكثر تعقيدًا إذا كان caseRef يحتوي على معرفات.
+      const mySessions = sessionsSnapshot.docs.map(doc => doc.data()).filter(s => s.caseRef.includes(client.fullname));
       
       const sessionTbody = document.getElementById('client-sessions-table');
       sessionTbody.innerHTML = '';
@@ -1799,12 +1829,12 @@
     }
 
     function updateClientMessagesList(clientName) {
-      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
       const list = document.getElementById('client-messages-list');
       if (!list) return;
       list.innerHTML = '';
 
-      const myMessages = messages.filter(m => m.from === clientName).sort((a, b) => b.timestamp - a.timestamp);
+      db.collection('messages').where('from', '==', clientName).orderBy('timestamp', 'desc').get().then(snapshot => {
+        const myMessages = snapshot.docs.map(doc => doc.data());
 
       myMessages.forEach(m => {
         let html = `<div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border-right:3px solid var(--accent-blue);">
@@ -1817,6 +1847,8 @@
         }
         html += `</div>`;
         list.innerHTML += html;
+      }).catch(error => {
+        console.error("Error fetching client messages:", error);
       });
     }
 
@@ -1841,7 +1873,7 @@
       });
     }
 
-    function sendInquiry() {
+    async function sendInquiry() {
       const text = document.getElementById('client-inquiry-text').value;
       if (!text.trim()) {
         alert("يرجى كتابة نص الاستفسار أولاً.");
@@ -1849,14 +1881,14 @@
       }
       
       const clientName = document.getElementById('display-client-name').textContent;
-      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
       
-      messages.push({
-        from: clientName,
-        message: text,
-        date: new Date().toLocaleString('ar-EG'),
-        timestamp: new Date().getTime(),
-        status: 'new'
+      try {
+        await db.collection('messages').add({
+          from: clientName,
+          message: text,
+          date: new Date().toLocaleString('ar-EG'),
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          status: 'new'
       });
       
       localStorage.setItem('portal_messages', JSON.stringify(messages));
@@ -1864,10 +1896,15 @@
       updateClientMessagesList(clientName);
       alert("تم إرسال استفسارك للمكتب بنجاح. سنرد عليك في أقرب وقت.");
     }
+      } catch (error) {
+        console.error("Error sending inquiry:", error);
+        alert("حدث خطأ أثناء إرسال الاستفسار: " + error.message);
+      }
+    }
 
-    // دالة التصدير إلى ملف Excel
-    function exportToExcel() {
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
+    async function exportToExcel() {
+      const clientsSnapshot = await db.collection('clients').get();
+      const clients = clientsSnapshot.docs.map(doc => doc.data());
       if (clients.length === 0) {
         alert("لا توجد بيانات موكلين لتصديرها.");
         return;
@@ -1889,9 +1926,9 @@
       XLSX.writeFile(wb, "الموكلين_مكتب_النزال.xlsx");
     }
 
-    // دالة التصدير إلى ملف PDF
-    function exportToPDF() {
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
+    async function exportToPDF() {
+      const clientsSnapshot = await db.collection('clients').get();
+      const clients = clientsSnapshot.docs.map(doc => doc.data());
       
       if (clients.length === 0) {
         alert("لا توجد بيانات موكلين لتصديرها.");
@@ -1944,8 +1981,9 @@
     }
 
     function populateClientsDatalist() {
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
       const datalist = document.getElementById('clients-datalist');
+      db.collection('clients').get().then(snapshot => {
+        const clients = snapshot.docs.map(doc => doc.data());
       if (!datalist) return;
       
       datalist.innerHTML = '';
@@ -1953,10 +1991,12 @@
         const option = document.createElement('option');
         option.value = client.fullname;
         datalist.appendChild(option);
+      }).catch(error => {
+        console.error("Error populating clients datalist:", error);
       });
     }
 
-    function saveAgency() {
+    async function saveAgency() {
       const clientName = document.getElementById('agency-client-name').value;
       const scope = document.getElementById('agency-scope').value;
       const type = document.getElementById('agency-type').value;
@@ -1971,6 +2011,8 @@
       }
 
       const finalizeSave = (imageData = null) => {
+        const agenciesRef = db.collection('agencies');
+
         let details = "";
         if (type === 'قضائية') {
           const serial = document.getElementById('j-serial').value;
@@ -1983,26 +2025,30 @@
           details = `عام: ${year} / خاص: ${priv} / سجل: ${record}`;
         }
 
-        const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
         const agencyData = {
           clientName,
           scope,
           type,
           date,
           place,
-          details,
-          image: imageData || (editingAgencyIndex !== -1 ? agencies[editingAgencyIndex].image : null),
-          timestamp: new Date().getTime()
+          details, // يمكن تقسيمها إلى حقول منفصلة في Firestore
+          image: imageData || (editingAgencyIndex !== -1 ? currentAgencyImage : null), // currentAgencyImage يجب أن يتم تحميلها عند التعديل
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        if (editingAgencyIndex === -1) {
-          agencies.push(agencyData);
-          alert("تم إضافة الوكالة بنجاح!");
-        } else {
-          agencies[editingAgencyIndex] = agencyData;
-          alert("تم تحديث بيانات الوكالة بنجاح!");
-          editingAgencyIndex = -1;
-          document.querySelector('#agency-form .action-btn').textContent = "إضافة وكالة";
+        try {
+          if (editingAgencyIndex === -1) {
+            agenciesRef.add(agencyData);
+            alert("تم إضافة الوكالة بنجاح!");
+          } else {
+            agenciesRef.doc(editingAgencyIndex).update(agencyData); // editingAgencyIndex سيكون معرف المستند
+            alert("تم تحديث بيانات الوكالة بنجاح!");
+            editingAgencyIndex = -1;
+            document.querySelector('#agency-form .action-btn').textContent = "إضافة وكالة";
+          }
+        } catch (error) {
+          console.error("Error saving agency:", error);
+          alert("خطأ في حفظ الوكالة: " + error.message);
         }
 
         localStorage.setItem('portal_agencies', JSON.stringify(agencies));
@@ -2022,18 +2068,19 @@
       }
     }
 
-    function updateAgenciesTable() {
+    async function updateAgenciesTable() {
       const searchTerm = (document.getElementById('agency-search')?.value || '').toLowerCase();
-      const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
       const tbody = document.getElementById('agencies-table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      const filtered = agencies.filter(a => 
-        a.clientName.toLowerCase().includes(searchTerm) || 
-        a.place.toLowerCase().includes(searchTerm) ||
-        a.details.toLowerCase().includes(searchTerm)
-      );
+      const agenciesRef = db.collection('agencies');
+      const snapshot = await agenciesRef.orderBy('timestamp', 'desc').get();
+      let agencies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const filtered = agencies.filter(agency =>
+        agency.clientName.toLowerCase().includes(searchTerm) || agency.place.toLowerCase().includes(searchTerm) || agency.details.toLowerCase().includes(searchTerm)
+      ); // التصفية المحلية للبحث المتعدد
 
       filtered.reverse().forEach((agency) => {
         const originalIndex = agencies.indexOf(agency);
@@ -2046,8 +2093,8 @@
           <td>${agency.place}</td>
           <td>
             ${agency.image ? `<button class="action-btn" style="background:var(--accent-gold); margin-left:5px;" onclick="openImageModal('${agency.image}')" title="عرض الوكالة">👁️</button>` : ''}
-            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editAgency(${originalIndex})" title="تعديل">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteAgency(${originalIndex})" title="حذف">حذف</button>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editAgency('${agency.id}')" title="تعديل">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteAgency('${agency.id}')" title="حذف">حذف</button>
           </td>
         </tr>`;
         tbody.innerHTML += row;
@@ -2055,16 +2102,16 @@
     }
 
     function editAgency(index) {
-      const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
-      const a = agencies[index];
-      if (!a) return;
+      db.collection('agencies').doc(index).get().then(doc => {
+        if (!doc.exists) return;
+        const a = doc.data();
 
-      editingAgencyIndex = index;
-      document.getElementById('agency-client-name').value = a.clientName;
-      document.getElementById('agency-scope').value = a.scope;
-      document.getElementById('agency-type').value = a.type;
-      document.getElementById('agency-date').value = a.date;
-      document.getElementById('agency-place').value = a.place;
+        editingAgencyIndex = index; // تخزين معرف المستند
+        document.getElementById('agency-client-name').value = a.clientName;
+        document.getElementById('agency-scope').value = a.scope;
+        document.getElementById('agency-type').value = a.type;
+        document.getElementById('agency-date').value = a.date;
+        document.getElementById('agency-place').value = a.place;
 
       toggleAgencyFields();
 
@@ -2086,6 +2133,9 @@
 
       document.querySelector('#agency-form .action-btn').textContent = "تحديث بيانات الوكالة";
       document.getElementById('agency-form').scrollIntoView({ behavior: 'smooth' });
+      }).catch(error => {
+        console.error("Error editing agency:", error);
+      });
     }
 
     let currentZoom = 1;
@@ -2115,13 +2165,16 @@
       document.getElementById('image-modal').style.display = "none";
     }
 
-    function deleteAgency(index) {
+    async function deleteAgency(index) {
       if (confirm("هل أنت متأكد من حذف بيانات هذه الوكالة؟")) {
-        const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
-        agencies.splice(index, 1);
-        localStorage.setItem('portal_agencies', JSON.stringify(agencies));
-        updateAgenciesTable();
-      }
+        try {
+          await db.collection('agencies').doc(index).delete();
+          alert("تم حذف الوكالة بنجاح!");
+          updateAgenciesTable();
+        } catch (error) {
+          console.error("Error deleting agency:", error);
+          alert("خطأ في حذف الوكالة: " + error.message);
+        }
     }
 
     // وظائف إدارة قضايا التحقيق
@@ -2142,26 +2195,29 @@
         recNum: document.getElementById('inv-rec-num').value,
         recDate: document.getElementById('inv-rec-date').value,
         recPlace: document.getElementById('inv-rec-place').value,
-        prosNum: document.getElementById('inv-pros-num').value,
-        timestamp: new Date().getTime()
+        prosNum: document.getElementById('inv-pros-num').value, // رقم وارد النيابة العامة
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (!caseData.client || !caseData.base || !caseData.year) {
         alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
         return;
       }
-
-      const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
-
-      if (editingInvestigationIndex === -1) {
-        cases.push(caseData);
-        alert("تم حفظ قضية التحقيق بنجاح!");
-      } else {
-        cases[editingInvestigationIndex] = caseData;
-        alert("تم تحديث قضية التحقيق بنجاح!");
+      
+      const investigationsRef = db.collection('investigations');
+      try {
+        if (editingInvestigationIndex === -1) {
+          await investigationsRef.add(caseData);
+          alert("تم حفظ قضية التحقيق بنجاح!");
+        } else {
+          await investigationsRef.doc(editingInvestigationIndex).update(caseData);
+          alert("تم تحديث قضية التحقيق بنجاح!");
+        }
+      } catch (error) {
+        console.error("Error saving investigation case:", error);
+        alert("خطأ في حفظ قضية التحقيق: " + error.message);
       }
 
-      localStorage.setItem('portal_investigations', JSON.stringify(cases));
       resetInvestigationForm();
       updateInvestigationTable();
     }
@@ -2171,18 +2227,19 @@
       const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
       const tbody = document.getElementById('investigation-table-body');
       if (!tbody) return;
-      tbody.innerHTML = '';
+      tbody.innerHTML = ''; // مسح المحتوى القديم
 
-      const filtered = cases.filter(c => 
-        c.client.toLowerCase().includes(searchTerm) || 
-        c.opponent.toLowerCase().includes(searchTerm) || 
-        c.base.includes(searchTerm)
-      );
+      const investigationsRef = db.collection('investigations');
+      const snapshot = await investigationsRef.orderBy('timestamp', 'desc').get();
+      let cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      filtered.reverse().forEach((c) => {
-        const originalIndex = cases.indexOf(c);
+      const filteredCases = cases.filter(c =>
+        c.client.toLowerCase().includes(searchTerm) || c.opponent.toLowerCase().includes(searchTerm) || c.base.includes(searchTerm)
+      ); // التصفية المحلية للبحث المتعدد
+
+      filteredCases.forEach((c) => {
         tbody.innerHTML += `<tr>
-          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole})</td>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole || ''})</td>
           <td>${c.opponent || '-'}</td>
           <td>${c.base}/${c.year}</td>
           <td>${c.crime}</td>
@@ -2190,27 +2247,31 @@
           <td>
             <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('investigation', ${originalIndex})">طباعة وصل</button>
             <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editInvestigationCase(${originalIndex})">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteInvestigationCase(${originalIndex})">حذف</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteInvestigationCase('${c.id}')">حذف</button>
           </td>
         </tr>`;
       });
     }
 
-    function deleteInvestigationCase(index) {
+    async function deleteInvestigationCase(docId) {
       if (confirm("هل أنت متأكد من حذف هذه القضية؟")) {
-        const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
-        cases.splice(index, 1);
-        localStorage.setItem('portal_investigations', JSON.stringify(cases));
-        updateInvestigationTable();
+        try {
+          await db.collection('investigations').doc(docId).delete();
+          alert("تم حذف قضية التحقيق بنجاح!");
+          updateInvestigationTable();
+        } catch (error) {
+          console.error("Error deleting investigation case:", error);
+          alert("خطأ في حذف قضية التحقيق: " + error.message);
+        }
       }
     }
 
-    function editInvestigationCase(index) {
-      const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
-      const c = cases[index];
-      if (!c) return;
+    async function editInvestigationCase(docId) {
+      const doc = await db.collection('investigations').doc(docId).get();
+      if (!doc.exists) return;
+      const c = doc.data();
 
-      editingInvestigationIndex = index;
+      editingInvestigationIndex = docId; // تخزين معرف المستند
       document.getElementById('inv-client').value = c.client;
       document.getElementById('inv-client-role').value = c.clientRole;
       document.getElementById('inv-client-status').value = c.clientStatus;
@@ -2229,7 +2290,7 @@
       document.getElementById('inv-pros-num').value = c.prosNum;
 
       document.querySelector('#investigation-form .action-btn').textContent = "تحديث قضية التحقيق";
-      document.getElementById('investigation-form').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('investigation-form').scrollIntoView({ behavior: 'smooth' }); // التمرير إلى النموذج
     }
 
     // وظائف إدارة قضايا الإحالة
@@ -2247,25 +2308,28 @@
         city: document.getElementById('ref-city').value,
         crime: document.getElementById('ref-crime').value,
         subject: document.getElementById('ref-subject').value,
-        timestamp: new Date().getTime()
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (!caseData.client || !caseData.base || !caseData.year) {
         alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
         return;
       }
-
-      const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
-
-      if (editingReferralIndex === -1) {
-        cases.push(caseData);
-        alert("تم حفظ قضية الإحالة بنجاح!");
-      } else {
-        cases[editingReferralIndex] = caseData;
-        alert("تم تحديث قضية الإحالة بنجاح!");
+      
+      const referralsRef = db.collection('referrals');
+      try {
+        if (editingReferralIndex === -1) {
+          await referralsRef.add(caseData);
+          alert("تم حفظ قضية الإحالة بنجاح!");
+        } else {
+          await referralsRef.doc(editingReferralIndex).update(caseData);
+          alert("تم تحديث قضية الإحالة بنجاح!");
+        }
+      } catch (error) {
+        console.error("Error saving referral case:", error);
+        alert("خطأ في حفظ قضية الإحالة: " + error.message);
       }
 
-      localStorage.setItem('portal_referrals', JSON.stringify(cases));
       resetReferralForm();
       updateReferralTable();
     }
@@ -2275,40 +2339,44 @@
       const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
       const tbody = document.getElementById('referral-table-body');
       if (!tbody) return;
-      tbody.innerHTML = '';
+      tbody.innerHTML = ''; // مسح المحتوى القديم
 
-      const filtered = cases.filter(c => 
-        c.client.toLowerCase().includes(searchTerm) || 
-        c.opponent.toLowerCase().includes(searchTerm) || 
-        c.base.includes(searchTerm)
-      );
+      const referralsRef = db.collection('referrals');
+      const snapshot = await referralsRef.orderBy('timestamp', 'desc').get();
+      let cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      filtered.reverse().forEach((c) => {
-        const originalIndex = cases.indexOf(c);
+      const filteredCases = cases.filter(c =>
+        c.client.toLowerCase().includes(searchTerm) || c.opponent.toLowerCase().includes(searchTerm) || c.base.includes(searchTerm)
+      ); // التصفية المحلية للبحث المتعدد
+
+      filteredCases.forEach((c) => {
         tbody.innerHTML += `<tr>
-          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole})</td>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole || ''})</td>
           <td>${c.opponent || '-'}</td>
           <td>${c.base}/${c.year}</td>
           <td>${c.crime}</td>
           <td>
             <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('referral', ${originalIndex})">طباعة وصل</button>
             <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editReferralCase(${originalIndex})">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteReferralCase(${originalIndex})">حذف</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteReferralCase('${c.id}')">حذف</button>
           </td>
         </tr>`;
       });
     }
 
-    function editReferralCase(index) {
-      const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
-      const c = cases[index];
-      if (!c) return;
+    async function editReferralCase(docId) {
+      const doc = await db.collection('referrals').doc(docId).get();
+      if (!doc.exists) return;
+      const c = doc.data();
 
-      editingReferralIndex = index;
+      editingReferralIndex = docId; // تخزين معرف المستند
       document.getElementById('ref-client').value = c.client;
       document.getElementById('ref-client-role').value = c.clientRole;
       document.getElementById('ref-client-status').value = c.clientStatus;
       document.getElementById('ref-opponent').value = c.opponent;
+      // تأكد من أن هذه الحقول موجودة في بيانات Firestore
+      // إذا لم تكن موجودة، قد تحتاج إلى إضافة قيم افتراضية أو التأكد من حفظها عند الإنشاء
+      // أو التعامل معها كـ undefined
       document.getElementById('ref-opponent-role').value = c.opponentRole;
       document.getElementById('ref-opponent-status').value = c.opponentStatus;
       document.getElementById('ref-base').value = c.base;
@@ -2319,16 +2387,19 @@
       document.getElementById('ref-subject').value = c.subject;
 
       document.querySelector('#referral-form .action-btn').textContent = "تحديث قضية الإحالة";
-      document.getElementById('referral-form').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('referral-form').scrollIntoView({ behavior: 'smooth' }); // التمرير إلى النموذج
     }
 
-    function deleteReferralCase(index) {
+    async function deleteReferralCase(docId) {
       if (confirm("هل أنت متأكد من حذف هذه القضية؟")) {
-        const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
-        cases.splice(index, 1);
-        localStorage.setItem('portal_referrals', JSON.stringify(cases));
-        updateReferralTable();
-      }
+        try {
+          await db.collection('referrals').doc(docId).delete();
+          alert("تم حذف قضية الإحالة بنجاح!");
+          updateReferralTable();
+        } catch (error) {
+          console.error("Error deleting referral case:", error);
+          alert("خطأ في حذف قضية الإحالة: " + error.message);
+        }
     }
 
     // وظائف إدارة التنفيذ
@@ -2344,25 +2415,28 @@
         actionTaken: document.getElementById('exe-action-taken').value,
         actionNext: document.getElementById('exe-action-next').value,
         notes: document.getElementById('exe-notes').value,
-        timestamp: new Date().getTime()
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (!caseData.client || !caseData.base || !caseData.year) {
         alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
         return;
       }
-
-      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
-
-      if (editingExecutionIndex === -1) {
-        cases.push(caseData);
-        alert("تم حفظ ملف التنفيذ بنجاح!");
-      } else {
-        cases[editingExecutionIndex] = caseData;
-        alert("تم تحديث ملف التنفيذ بنجاح!");
+      
+      const executionsRef = db.collection('executions');
+      try {
+        if (editingExecutionIndex === -1) {
+          await executionsRef.add(caseData);
+          alert("تم حفظ ملف التنفيذ بنجاح!");
+        } else {
+          await executionsRef.doc(editingExecutionIndex).update(caseData);
+          alert("تم تحديث ملف التنفيذ بنجاح!");
+        }
+      } catch (error) {
+        console.error("Error saving execution case:", error);
+        alert("خطأ في حفظ ملف التنفيذ: " + error.message);
       }
 
-      localStorage.setItem('portal_executions', JSON.stringify(cases));
       resetExecutionForm();
       updateExecutionTable();
     }
@@ -2372,40 +2446,44 @@
       const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
       const tbody = document.getElementById('execution-table-body');
       if (!tbody) return;
-      tbody.innerHTML = '';
+      tbody.innerHTML = ''; // مسح المحتوى القديم
 
-      const filtered = cases.filter(c => 
-        c.client.toLowerCase().includes(searchTerm) || 
-        c.opponent.toLowerCase().includes(searchTerm) || 
-        c.base.includes(searchTerm)
-      );
+      const executionsRef = db.collection('executions');
+      const snapshot = await executionsRef.orderBy('timestamp', 'desc').get();
+      let cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      filtered.reverse().forEach((c) => {
-        const originalIndex = cases.indexOf(c);
+      const filteredCases = cases.filter(c =>
+        c.client.toLowerCase().includes(searchTerm) || c.opponent.toLowerCase().includes(searchTerm) || c.base.includes(searchTerm)
+      ); // التصفية المحلية للبحث المتعدد
+
+      filteredCases.forEach((c) => {
         tbody.innerHTML += `<tr>
-          <td style="color:var(--accent-gold); font-weight:600;">${c.client}<br><small style="color:var(--gray-silver)">${c.clientRole}</small></td>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client}<br><small style="color:var(--gray-silver)">${c.clientRole || ''}</small></td>
           <td>${c.base}/${c.year}</td>
           <td><span class="status-badge status-active">${c.type}</span></td>
           <td>${c.opponent}</td>
           <td style="color:var(--accent-blue)">${c.actionNext || '-'}</td>
           <td>
             <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editExecutionCase(${originalIndex})">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteExecutionCase(${originalIndex})">حذف</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteExecutionCase('${c.id}')">حذف</button>
           </td>
         </tr>`;
       });
     }
 
-    function editExecutionCase(index) {
-      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
-      const c = cases[index];
-      if (!c) return;
+    async function editExecutionCase(docId) {
+      const doc = await db.collection('executions').doc(docId).get();
+      if (!doc.exists) return;
+      const c = doc.data();
 
-      editingExecutionIndex = index;
+      editingExecutionIndex = docId; // تخزين معرف المستند
       document.getElementById('exe-client').value = c.client;
       document.getElementById('exe-client-role').value = c.clientRole;
       document.getElementById('exe-base').value = c.base;
       document.getElementById('exe-year').value = c.year;
+      // تأكد من أن هذه الحقول موجودة في بيانات Firestore
+      // إذا لم تكن موجودة، قد تحتاج إلى إضافة قيم افتراضية أو التأكد من حفظها عند الإنشاء
+      // أو التعامل معها كـ undefined
       document.getElementById('exe-type').value = c.type;
       document.getElementById('exe-opponent').value = c.opponent;
       document.getElementById('exe-opponent-role').value = c.opponentRole;
@@ -2414,16 +2492,19 @@
       document.getElementById('exe-notes').value = c.notes;
 
       document.querySelector('#execution-form .action-btn').textContent = "تحديث ملف التنفيذ";
-      document.getElementById('execution-form').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('execution-form').scrollIntoView({ behavior: 'smooth' }); // التمرير إلى النموذج
     }
 
-    function deleteExecutionCase(index) {
+    async function deleteExecutionCase(docId) {
       if (confirm("هل أنت متأكد من حذف هذا الملف التنفيذي؟")) {
-        const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
-        cases.splice(index, 1);
-        localStorage.setItem('portal_executions', JSON.stringify(cases));
-        updateExecutionTable();
-      }
+        try {
+          await db.collection('executions').doc(docId).delete();
+          alert("تم حذف ملف التنفيذ بنجاح!");
+          updateExecutionTable();
+        } catch (error) {
+          console.error("Error deleting execution case:", error);
+          alert("خطأ في حذف ملف التنفيذ: " + error.message);
+        }
     }
 
     // وظائف إدارة رسائل الموكلين
@@ -2433,10 +2514,12 @@
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      // إضافة فهرس أصلي للحذف والتعديل، ثم العرض حسب التاريخ (الأحدث أولاً)
-      const indexed = messages.map((m, i) => ({...m, originalIndex: i}));
-      indexed.sort((a, b) => b.timestamp - a.timestamp);
+      db.collection('messages').orderBy('timestamp', 'desc').get().then(snapshot => {
+        const indexed = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // ملاحظة: originalIndex لم يعد ضرورياً إذا كنا نستخدم معرف المستند من Firestore
+        // ولكن يمكن استخدامه كمرجع مؤقت إذا كانت هناك حاجة لـ index في وظائف أخرى
 
+      // عرض الرسائل
       indexed.forEach((m) => {
         const statusBadge = m.status === 'new' ? '<span class="status-badge status-new">جديدة</span>' : '<span class="status-badge status-active">مقروءة</span>';
         tbody.innerHTML += `<tr>
@@ -2448,49 +2531,65 @@
           </td>
           <td>${statusBadge}</td>
           <td>
-            <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="replyToMessage(${m.originalIndex})">رد</button>
-            ${m.status === 'new' ? `<button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="markMessageRead(${m.originalIndex})">مقروءة</button>` : ''}
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteMessage(${m.originalIndex})">حذف</button>
+            <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="replyToMessage('${m.id}')">رد</button>
+            ${m.status === 'new' ? `<button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="markMessageRead('${m.id}')">مقروءة</button>` : ''}
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteMessage('${m.id}')">حذف</button>
           </td>
         </tr>`;
       });
+      }).catch(error => {
+        console.error("Error updating messages table:", error);
+      });
     }
 
-    function replyToMessage(index) {
-      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
-      const currentMessage = messages[index];
-      if (!currentMessage) return;
+    async function replyToMessage(docId) {
+      const messageDoc = await db.collection('messages').doc(docId).get();
+      if (!messageDoc.exists) return;
+      const currentMessage = messageDoc.data();
 
-      const replyText = prompt(`الرد على استفسار ${currentMessage.from}:`, currentMessage.reply || "");
+      const replyText = prompt(`الرد على استفسار ${currentMessage.from}:`, currentMessage.reply || ""); // استخدام currentMessage.reply
       
       if (replyText !== null && replyText.trim() !== "") {
-        messages[index].reply = replyText;
-        messages[index].replyDate = new Date().toLocaleString('ar-EG');
-        messages[index].status = 'read'; // تعيين كقراءة تلقائياً عند الرد
-        localStorage.setItem('portal_messages', JSON.stringify(messages));
-        updateMessagesTable();
-        alert("تم إرسال الرد بنجاح.");
+        try {
+          await db.collection('messages').doc(docId).update({
+            reply: replyText,
+            replyDate: new Date().toLocaleString('ar-EG'),
+            status: 'read' // تعيين كقراءة تلقائياً عند الرد
+          });
+          updateMessagesTable();
+          alert("تم إرسال الرد بنجاح.");
+        } catch (error) {
+          console.error("Error replying to message:", error);
+          alert("خطأ في إرسال الرد: " + error.message);
+        }
       }
     }
 
-    function markMessageRead(index) {
-      const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
-      if(messages[index]) messages[index].status = 'read';
-      localStorage.setItem('portal_messages', JSON.stringify(messages));
-      updateMessagesTable();
+    async function markMessageRead(docId) {
+      try {
+        await db.collection('messages').doc(docId).update({ status: 'read' });
+        updateMessagesTable();
+      } catch (error) {
+        console.error("Error marking message as read:", error);
+      }
     }
 
-    function deleteMessage(index) {
+    async function deleteMessage(docId) {
       if (confirm("هل أنت متأكد من حذف هذه الرسالة؟")) {
-        const messages = JSON.parse(localStorage.getItem('portal_messages') || '[]');
-        messages.splice(index, 1);
-        localStorage.setItem('portal_messages', JSON.stringify(messages));
-        updateMessagesTable();
+        try {
+          await db.collection('messages').doc(docId).delete();
+          alert("تم حذف الرسالة بنجاح!");
+          updateMessagesTable();
+        } catch (error) {
+          console.error("Error deleting message:", error);
+          alert("خطأ في حذف الرسالة: " + error.message);
+        }
       }
     }
 
-    function exportExecutionsToExcel() {
-      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+    async function exportExecutionsToExcel() {
+      const casesSnapshot = await db.collection('executions').get();
+      const cases = casesSnapshot.docs.map(doc => doc.data());
       if (cases.length === 0) {
         alert("لا توجد بيانات قضايا تنفيذية لتصديرها.");
         return;
@@ -2515,8 +2614,9 @@
       XLSX.writeFile(wb, "القضايا_التنفيذية_مكتب_النزال.xlsx");
     }
 
-    function exportExecutionsToPDF() {
-      const cases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+    async function exportExecutionsToPDF() {
+      const casesSnapshot = await db.collection('executions').get();
+      const cases = casesSnapshot.docs.map(doc => doc.data());
       
       if (cases.length === 0) {
         alert("لا توجد بيانات قضايا تنفيذية لتصديرها.");
@@ -2551,10 +2651,12 @@
 
     // وظائف إدارة الجلسات
     function populateAllCasesDatalist() {
-      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
-      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
       const datalist = document.getElementById('all-cases-datalist');
       if (!datalist) return;
+
+      Promise.all([db.collection('investigations').get(), db.collection('referrals').get()]).then(([invSnapshot, refSnapshot]) => {
+        const invCases = invSnapshot.docs.map(doc => doc.data());
+        const refCases = refSnapshot.docs.map(doc => doc.data());
       
       datalist.innerHTML = '';
       // دمج أسماء الموكلين وأرقام الأساس لسهولة الاختيار
@@ -2563,10 +2665,12 @@
         const option = document.createElement('option');
         option.value = item;
         datalist.appendChild(option);
+      }).catch(error => {
+        console.error("Error populating all cases datalist:", error);
       });
     }
 
-    function saveSession() {
+    async function saveSession() {
       const sessionData = {
         caseRef: document.getElementById('sess-case-ref').value,
         court: document.getElementById('sess-court').value,
@@ -2574,26 +2678,29 @@
         time: document.getElementById('sess-time').value,
         notes: document.getElementById('sess-notes').value,
         timestamp: new Date().getTime()
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (!sessionData.caseRef || !sessionData.date) {
         alert("يرجى إدخال اسم الموكل/القضية وتاريخ الجلسة");
         return;
       }
-
-      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
-
-      if (editingSessionIndex === -1) {
-        sessions.push(sessionData);
-        alert("تم جدولة الجلسة بنجاح!");
-      } else {
-        sessions[editingSessionIndex] = sessionData;
-        alert("تم تحديث بيانات الجلسة!");
-        editingSessionIndex = -1;
-        document.querySelector('#session-form .action-btn').textContent = "حفظ وجدولة الجلسة";
+      
+      const sessionsRef = db.collection('sessions');
+      try {
+        if (editingSessionIndex === -1) {
+          await sessionsRef.add(sessionData);
+          alert("تم جدولة الجلسة بنجاح!");
+        } else {
+          await sessionsRef.doc(editingSessionIndex).update(sessionData);
+          alert("تم تحديث بيانات الجلسة!");
+          editingSessionIndex = -1;
+          document.querySelector('#session-form .action-btn').textContent = "حفظ وجدولة الجلسة";
+        }
+      } catch (error) {
+        console.error("Error saving session:", error);
+        alert("خطأ في حفظ الجلسة: " + error.message);
       }
-
-      localStorage.setItem('portal_sessions', JSON.stringify(sessions));
       document.getElementById('session-form').reset();
       updateSessionsTable();
     }
@@ -2623,22 +2730,25 @@
           <td><span style="color:${isToday ? 'var(--accent-gold)' : 'var(--accent-green)'}; font-weight:${isToday ? 'bold' : 'normal'}">${s.date}</span> ${s.time ? `| ${s.time}` : ''}</td>
           <td>${s.court}</td>
           <td style="font-size:0.85rem; color:var(--gray-silver)">${s.notes}</td>
-          <td>
-            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editSession(${originalIndex})">تعديل</button>
-            <button class="action-btn" style="background: #ef4444;" onclick="deleteSession(${originalIndex})">حذف</button>
+          <td>            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editSession('${s.id}')">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteSession('${s.id}')">حذف</button>
           </td>
         </tr>`;
       });
     }
 
-    function editSession(index) {
-      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
-      const s = sessions[index];
-      if (!s) return;
+    async function editSession(docId) {
+      const doc = await db.collection('sessions').doc(docId).get();
+      if (!doc.exists) return;
+      const s = doc.data();
 
-      editingSessionIndex = index;
+      editingSessionIndex = docId; // تخزين معرف المستند
       document.getElementById('sess-case-ref').value = s.caseRef;
       document.getElementById('sess-court').value = s.court;
+      // تأكد من أن هذه الحقول موجودة في بيانات Firestore
+      // إذا لم تكن موجودة، قد تحتاج إلى إضافة قيم افتراضية أو التأكد من حفظها عند الإنشاء
+      // أو التعامل معها كـ undefined
+
       document.getElementById('sess-date').value = s.date;
       document.getElementById('sess-time').value = s.time;
       document.getElementById('sess-notes').value = s.notes;
@@ -2647,13 +2757,16 @@
       document.getElementById('session-form').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function deleteSession(index) {
+    async function deleteSession(docId) {
       if (confirm("هل أنت متأكد من حذف هذه الجلسة؟")) {
-        const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
-        sessions.splice(index, 1);
-        localStorage.setItem('portal_sessions', JSON.stringify(sessions));
-        updateSessionsTable();
-      }
+        try {
+          await db.collection('sessions').doc(docId).delete();
+          alert("تم حذف الجلسة بنجاح!");
+          updateSessionsTable();
+        } catch (error) {
+          console.error("Error deleting session:", error);
+          alert("خطأ في حذف الجلسة: " + error.message);
+        }
     }
 
     // وظيفة طباعة وصل القضية
@@ -2725,13 +2838,13 @@
       const tomorrowDateString = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
 
       const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
-      const allCases = [
-          ...JSON.parse(localStorage.getItem('portal_investigations') || '[]'),
-          ...JSON.parse(localStorage.getItem('portal_referrals') || '[]'),
-          ...JSON.parse(localStorage.getItem('portal_executions') || '[]'),
-          ...JSON.parse(localStorage.getItem('portal_general_cases') || '[]')
-      ];
+      const clientsSnapshot = await db.collection('clients').get();
+      const clients = clientsSnapshot.docs.map(doc => doc.data());
+      const invSnapshot = await db.collection('investigations').get();
+      const refSnapshot = await db.collection('referrals').get();
+      const exeSnapshot = await db.collection('executions').get();
+      const genSnapshot = await db.collection('generalCases').get();
+      const allCases = [...invSnapshot.docs.map(doc => doc.data()), ...refSnapshot.docs.map(doc => doc.data()), ...exeSnapshot.docs.map(doc => doc.data()), ...genSnapshot.docs.map(doc => doc.data())];
 
       const tomorrowSessions = sessions.filter(s => s.date === tomorrowDateString);
 
@@ -2801,7 +2914,7 @@
     }
 
     // وظيفة حفظ القضايا العامة (إدارة القضايا) وربطها بالموكلين
-    function saveGeneralCase() {
+    async function saveGeneralCase() {
       const caseData = {
         court: document.getElementById('court').value,
         base: document.getElementById('case-number').value,
@@ -2813,34 +2926,44 @@
         opponentRole: document.getElementById('opponent-role').value,
         client: document.getElementById('client-full-name').value.trim(),
         clientRole: document.getElementById('client-role').value,
-        firstSession: document.getElementById('first-session-date').value,
-        timestamp: new Date().getTime(),
+        firstSession: document.getElementById('first-session-date').value, // تاريخ أول جلسة
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(), // وقت الإنشاء
         clientStatus: 'نشطة',
         typeLabel: 'عامة'
       };
 
       if (!caseData.client || !caseData.base || !caseData.year) {
         alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
-        return;
+        return; // توقف إذا كانت البيانات الأساسية غير مكتملة
       }
 
-      const cases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]');
-      cases.push(caseData);
-      localStorage.setItem('portal_general_cases', JSON.stringify(cases));
-      
-      alert('تم حفظ القضية بنجاح وربطها بالموكل!');
-      document.querySelector('#case-management-section form').reset();
-      refreshDashboardData();
+      const generalCasesRef = db.collection('generalCases');
+      try {
+        await generalCasesRef.add(caseData);
+        alert('تم حفظ القضية بنجاح وربطها بالموكل!');
+        document.querySelector('#case-management-section form').reset();
+        refreshDashboardData(); // تحديث لوحة التحكم بعد الحفظ
+      } catch (error) {
+        console.error("Error saving general case:", error);
+        alert("خطأ في حفظ القضية العامة: " + error.message);
+      }
     }
 
     // وظيفة تحديث بيانات لوحة التحكم الرئيسية (الإحصائيات وآخر التحديثات)
-    function refreshDashboardData() {
-      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]').map(c => ({...c, typeLabel: 'تحقيق'}));
-      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]').map(c => ({...c, typeLabel: 'إحالة'}));
-      const genCases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]').map(c => ({...c, typeLabel: 'عامة'}));
-      const exeCases = JSON.parse(localStorage.getItem('portal_executions') || '[]').map(c => ({...c, typeLabel: 'تنفيذ', dept: c.type, crime: 'أساس: ' + c.base}));
-      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
-      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+    async function refreshDashboardData() {
+      const invSnapshot = await db.collection('investigations').get();
+      const refSnapshot = await db.collection('referrals').get();
+      const genSnapshot = await db.collection('generalCases').get();
+      const exeSnapshot = await db.collection('executions').get();
+      const clientsSnapshot = await db.collection('clients').get();
+      const sessionsSnapshot = await db.collection('sessions').get();
+
+      const invCases = invSnapshot.docs.map(doc => ({...doc.data(), typeLabel: 'تحقيق'}));
+      const refCases = refSnapshot.docs.map(doc => ({...doc.data(), typeLabel: 'إحالة'}));
+      const genCases = genSnapshot.docs.map(doc => ({...doc.data(), typeLabel: 'عامة'}));
+      const exeCases = exeSnapshot.docs.map(doc => ({...doc.data(), typeLabel: 'تنفيذ', dept: doc.data().type, crime: 'أساس: ' + doc.data().base}));
+      const clients = clientsSnapshot.docs.map(doc => doc.data());
+      const sessions = sessionsSnapshot.docs.map(doc => doc.data());
       
       const allCases = [...invCases, ...refCases, ...genCases, ...exeCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       
@@ -2862,7 +2985,7 @@
       // عرض آخر 5 قضايا مضافة أو معدلة
       allCases.slice(0, 5).forEach(c => {
         const statusClass = c.clientStatus === 'موقوف' ? 'status-new' : 'status-active';
-        tbody.innerHTML += `
+        tbody.innerHTML += ` 
           <tr>
             <td>${c.base}/${c.year}</td>
             <td style="font-weight:600;">${c.client}</td>
@@ -2881,7 +3004,7 @@
     }
 
     // Function to show a specific section and hide others
-    function showSection(sectionId) {
+    async function showSection(sectionId) {
       const sections = document.querySelectorAll('.main-content section');
       sections.forEach(section => {
         section.style.display = 'none';
@@ -2889,23 +3012,23 @@
       document.getElementById(sectionId).style.display = 'block';
 
       if (sectionId === 'dashboard-overview-section') {
-        refreshDashboardData();
+        await refreshDashboardData();
       }
 
       if (sectionId === 'clients-management-section') {
-        updateClientsTable();
+        await updateClientsTable();
       }
       
       // تحديث قائمة الموكلين في كافة الأقسام التي تحتاج إكمال تلقائي
       if (['case-management-section', 'agencies-management-section', 'investigation-cases-section', 'referral-cases-section', 'sessions-management-section', 'execution-management-section', 'messages-management-section'].includes(sectionId)) {
-        populateClientsDatalist();
-        if (sectionId === 'sessions-management-section') populateAllCasesDatalist();
-        if (sectionId === 'agencies-management-section') updateAgenciesTable();
-        if (sectionId === 'investigation-cases-section') updateInvestigationTable();
-        if (sectionId === 'referral-cases-section') updateReferralTable();
-        if (sectionId === 'sessions-management-section') updateSessionsTable();
-        if (sectionId === 'execution-management-section') updateExecutionTable();
-        if (sectionId === 'messages-management-section') updateMessagesTable();
+        await populateClientsDatalist();
+        if (sectionId === 'sessions-management-section') await populateAllCasesDatalist();
+        if (sectionId === 'agencies-management-section') await updateAgenciesTable();
+        if (sectionId === 'investigation-cases-section') await updateInvestigationTable();
+        if (sectionId === 'referral-cases-section') await updateReferralTable();
+        if (sectionId === 'sessions-management-section') await updateSessionsTable();
+        if (sectionId === 'execution-management-section') await updateExecutionTable();
+        if (sectionId === 'messages-management-section') await updateMessagesTable();
       }
 
       // Update active state in sidebar
