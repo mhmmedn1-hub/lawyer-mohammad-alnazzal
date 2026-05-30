@@ -176,7 +176,7 @@
     }
 
     .login-form input::placeholder {
-      color: rgba(9, 19, 34, 0.45);
+      color: rgba(255, 255, 255, 0.3);
     }
 
     .login-form button {
@@ -460,6 +460,19 @@
     @media (max-width: 768px) { .form-row-triple { grid-template-columns: 1fr; } }
 
     /* Syrian Flag Styling */
+
+    /* Responsive adjustments for nested form grids */
+    .form-grid-responsive {
+      display: grid;
+      gap: 15px; /* Default gap for desktop */
+    }
+    @media (max-width: 980px) {
+      .form-grid-responsive {
+        grid-template-columns: 1fr !important; /* Force stacking on smaller screens */
+        gap: 10px; /* Adjust gap for vertical stacking on mobile */
+      }
+    }
+
     .syrian-flag {
       position: fixed;
       top: 20px;
@@ -681,10 +694,10 @@
           <h2>لوحة المحامي</h2>
           <div class="login-form">
             <label>اسم المستخدم</label>
-            <input type="text" id="lawyer-user" placeholder="اسم المستخدم" />
+            <input type="text" id="lawyer-user" placeholder="اسم المستخدم" onkeypress="if(event.key==='Enter') handleLawyerLogin()" />
             <label>كلمة المرور</label>
             <div class="password-container">
-              <input type="password" id="lawyer-pass" placeholder="••••••••" />
+              <input type="password" id="lawyer-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter') handleLawyerLogin()" />
               <span class="toggle-password" onclick="togglePasswordVisibility('lawyer-pass', this)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </span>
@@ -701,10 +714,10 @@
           <h2>بوابة الموكل</h2>
           <div class="login-form">
             <label>اسم المستخدم</label>
-            <input type="text" id="client-user" placeholder="رقم الملف أو المستخدم" />
+            <input type="text" id="client-user" placeholder="رقم الملف أو المستخدم" onkeypress="if(event.key==='Enter') handleClientLogin()" />
             <label>كلمة المرور</label>
             <div class="password-container">
-              <input type="password" id="client-pass" placeholder="••••••••" />
+              <input type="password" id="client-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter') handleClientLogin()" />
               <span class="toggle-password" onclick="togglePasswordVisibility('client-pass', this)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               </span>
@@ -885,7 +898,7 @@
               <label for="court">المحكمة</label>
               <input type="text" id="court" name="court" placeholder="مثال: بداية دمشق" required>
             </div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 2fr 1fr;">
               <div class="form-group">
                 <label for="case-number">رقم الأساس</label>
                 <input type="text" id="case-number" name="case-number" placeholder="1234" required>
@@ -910,8 +923,8 @@
             <label for="case-subject">موضوع الدعوى</label>
             <textarea id="case-subject" name="case-subject" rows="3" placeholder="وصف موجز لموضوع الدعوى" required></textarea>
           </div>
-          <div class="form-row">
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+          <div class="form-row"> <!-- This form-row will become 1fr on mobile -->
+            <div class="form-grid-responsive" style="grid-template-columns: 2fr 1fr;">
               <div class="form-group">
                 <label for="opponent">الخصم</label>
                 <input type="text" id="opponent" name="opponent" placeholder="اسم الخصم" required>
@@ -927,7 +940,7 @@
                 </select>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 2fr 1fr;">
               <div class="form-group">
                 <label for="client-full-name">اسم الموكل الكامل</label>
                 <input type="text" id="client-full-name" name="client-full-name" list="clients-datalist" placeholder="اسم الموكل" required>
@@ -995,10 +1008,18 @@
           <div class="form-row">
             <div class="form-group">
               <label for="c-password">كلمة المرور</label>
-              <input type="password" id="c-password" placeholder="••••••••" required>
+              <div class="password-container">
+                <input type="password" id="c-password" placeholder="••••••••" required>
+                <span class="toggle-password" onclick="togglePasswordVisibility('c-password', this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+              </div>
             </div>
           </div>
-          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="addClient()">إضافة موكل</button>
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="action-btn" onclick="addClient()">إضافة موكل</button>
+            <button type="button" class="action-btn" style="background: #64748b;" onclick="resetClientForm()">تفريغ الخانات</button>
+          </div>
         </form>
 
         <div style="margin-top: 40px;">
@@ -1177,11 +1198,11 @@
             </div>
           </div>
           <div class="form-row">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>رقم الأساس</label><input type="text" id="inv-base" placeholder="رقم الأساس"></div>
               <div class="form-group"><label>العام</label><input type="text" id="inv-year" placeholder="2024"></div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>الدائرة</label><input type="text" id="inv-dept" placeholder="اسم الدائرة"></div>
               <div class="form-group"><label>المدينة</label><input type="text" id="inv-city" placeholder="المدينة"></div>
             </div>
@@ -1198,7 +1219,10 @@
             <div class="form-group"><label>مكان تنظيم الضبط</label><input type="text" id="inv-rec-place"></div>
             <div class="form-group"><label>رقم وارد النيابة العامة</label><input type="text" id="inv-pros-num"></div>
           </div>
-          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveInvestigationCase()">إضافة قضية تحقيق</button>
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="action-btn" onclick="saveInvestigationCase()">إضافة قضية تحقيق</button>
+            <button type="button" class="action-btn" style="background: #64748b;" onclick="resetInvestigationForm()">تفريغ الخانات</button>
+          </div>
         </form>
 
         <div style="margin-top: 40px;">
@@ -1270,11 +1294,11 @@
             </div>
           </div>
           <div class="form-row">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>رقم الأساس</label><input type="text" id="ref-base" placeholder="رقم الأساس"></div>
               <div class="form-group"><label>العام</label><input type="text" id="ref-year" placeholder="2024"></div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>الدائرة</label><input type="text" id="ref-dept" placeholder="اسم الدائرة"></div>
               <div class="form-group"><label>المدينة</label><input type="text" id="ref-city" placeholder="المدينة"></div>
             </div>
@@ -1283,7 +1307,10 @@
             <div class="form-group"><label>الجرم</label><input type="text" id="ref-crime" placeholder="نوع الجرم"></div>
             <div class="form-group"><label>موضوع الجرم</label><input type="text" id="ref-subject" placeholder="تفاصيل الجرم"></div>
           </div>
-          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveReferralCase()">إضافة قضية إحالة</button>
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="action-btn" onclick="saveReferralCase()">إضافة قضية إحالة</button>
+            <button type="button" class="action-btn" style="background: #64748b;" onclick="resetReferralForm()">تفريغ الخانات</button>
+          </div>
         </form>
 
         <div style="margin-top: 40px;">
@@ -1344,6 +1371,7 @@
             <h3 style="margin:0">قائمة الجلسات المجدولة (مرتبة حسب التاريخ)</h3>
             <input type="text" id="session-search" placeholder="بحث عن جلسة (موكل، مكان)..." oninput="updateSessionsTable()" 
                    style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+            <button type="button" class="action-btn" style="background: #007bff; margin-right: 10px;" onclick="sendTomorrowSessionReminders()">إرسال تذكير جلسات الغد</button>
           </div>
           <table class="data-table">
             <thead>
@@ -1379,7 +1407,7 @@
             </div>
           </div>
           <div class="form-row-triple">
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+            <div class="form-grid-responsive" style="grid-template-columns: 2fr 1fr;">
               <div class="form-group">
                 <label>رقم الأساس</label>
                 <input type="text" id="exe-base" placeholder="رقم الأساس" required>
@@ -1424,7 +1452,10 @@
             <label>ملاحظات</label>
             <textarea id="exe-notes" rows="3" placeholder="ملاحظات إضافية حول ملف التنفيذ"></textarea>
           </div>
-          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveExecutionCase()">حفظ ملف التنفيذ</button>
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="action-btn" onclick="saveExecutionCase()">حفظ ملف التنفيذ</button>
+            <button type="button" class="action-btn" style="background: #64748b;" onclick="resetExecutionForm()">تفريغ الخانات</button>
+          </div>
         </form>
 
         <div style="margin-top: 40px;">
@@ -1522,8 +1553,8 @@
     });
 
     function handleLawyerLogin() {
-      const user = document.getElementById('lawyer-user').value;
-      const pass = document.getElementById('lawyer-pass').value;
+      const user = document.getElementById('lawyer-user').value.trim();
+      const pass = document.getElementById('lawyer-pass').value.trim();
       const remember = document.getElementById('lawyer-remember').checked;
 
       if (user === "محمد النزال" && pass === "6503536@0936599373") {
@@ -1544,6 +1575,37 @@
       } else {
         alert("خطأ: اسم المستخدم أو كلمة المرور غير صحيحة.");
       }
+    }
+
+    // دالة مخصصة لتفريغ جميع خانات نموذج الموكل وإعادة ضبط الحالة
+    function resetClientForm() {
+      editingClientIndex = -1;
+      document.getElementById('client-form').reset();
+      document.getElementById('c-password').type = 'password';
+      const toggleBtn = document.querySelector('#client-form .toggle-password');
+      if (toggleBtn) toggleBtn.innerHTML = eyeIcon;
+      document.querySelector('#client-form .action-btn').textContent = "إضافة موكل";
+    }
+
+    function resetInvestigationForm() {
+      editingInvestigationIndex = -1;
+      document.getElementById('investigation-form').reset();
+      const btn = document.querySelector('#investigation-form .action-btn');
+      if (btn) btn.textContent = "إضافة قضية تحقيق";
+    }
+
+    function resetReferralForm() {
+      editingReferralIndex = -1;
+      document.getElementById('referral-form').reset();
+      const btn = document.querySelector('#referral-form .action-btn');
+      if (btn) btn.textContent = "إضافة قضية إحالة";
+    }
+
+    function resetExecutionForm() {
+      editingExecutionIndex = -1;
+      document.getElementById('execution-form').reset();
+      const btn = document.querySelector('#execution-form .action-btn');
+      if (btn) btn.textContent = "حفظ ملف التنفيذ";
     }
 
     let editingClientIndex = -1;
@@ -1581,13 +1643,10 @@
       } else {
         clients[editingClientIndex] = { fullname, address, email, phone, whatsapp, username, password };
         alert("تم تحديث بيانات الموكل بنجاح!");
-        editingClientIndex = -1;
-        document.querySelector('#client-form .action-btn').textContent = "إضافة موكل";
       }
 
       localStorage.setItem('portal_clients', JSON.stringify(clients));
-      
-      document.getElementById('client-form').reset();
+      resetClientForm(); // تفريغ الخانات بعد النجاح
       updateClientsTable();
     }
 
@@ -1643,17 +1702,19 @@
       document.getElementById('c-whatsapp').value = client.whatsapp;
       document.getElementById('c-username').value = client.username;
       document.getElementById('c-password').value = client.password;
+      document.getElementById('c-password').type = 'text';
+      document.querySelector('#client-form .toggle-password').innerHTML = eyeOffIcon;
 
       document.querySelector('#client-form .action-btn').textContent = "تحديث بيانات الموكل";
       document.getElementById('client-form').scrollIntoView({ behavior: 'smooth' });
     }
 
     function handleClientLogin() {
-      const user = document.getElementById('client-user').value;
-      const pass = document.getElementById('client-pass').value;
+      const user = document.getElementById('client-user').value.trim();
+      const pass = document.getElementById('client-pass').value.trim();
       
       const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
-      const client = clients.find(c => c.username === user && c.password === pass);
+      const client = clients.find(c => c.username.toLowerCase() === user.toLowerCase() && c.password === pass);
 
       if (client) {
         document.getElementById('login-page').style.display = 'none';
@@ -1677,28 +1738,32 @@
       const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
       const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
       const exeCases = JSON.parse(localStorage.getItem('portal_executions') || '[]');
+      const genCases = JSON.parse(localStorage.getItem('portal_general_cases') || '[]');
       
-      let myCaseData = invCases.find(c => c.client === client.fullname) || 
-                   refCases.find(c => c.client === client.fullname) ||
-                   exeCases.find(c => c.client === client.fullname);
-
-      if (myCaseData && !myCaseData.dept && myCaseData.type) { // إذا كانت قضية تنفيذ
-        myCaseData.dept = myCaseData.type; 
-        myCaseData.city = "ملف تنفيذي";
-        myCaseData.subject = "متابعة إجراءات التنفيذ";
-      }
+      // جمع كافة القضايا المطابقة من جميع الأقسام
+      const myInv = invCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'تحقيق'}));
+      const myRef = refCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'إحالة'}));
+      const myExe = exeCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'تنفيذ', dept: c.type, city: "ملف تنفيذي", subject: "متابعة إجراءات التنفيذ"}));
+      const myGen = genCases.filter(c => c.client.trim() === client.fullname.trim()).map(c => ({...c, category: 'عامة', dept: c.court}));
+      
+      const allMyCases = [...myInv, ...myRef, ...myExe, ...myGen];
 
       const caseContainer = document.getElementById('client-case-details');
-      if (myCaseData) {
-        caseContainer.innerHTML = `
-          <div class="info-row"><span class="info-label">المحكمة:</span><span class="info-value">${myCaseData.dept}</span></div>
-          <div class="info-row"><span class="info-label">رقم الأساس:</span><span class="info-value">${myCaseData.base} / ${myCaseData.year}</span></div>
-          <div class="info-row"><span class="info-label">المدينة:</span><span class="info-value">${myCaseData.city}</span></div>
-          <div class="info-row"><span class="info-label">موضوع الدعوى:</span><span class="info-value">${myCaseData.subject || myCaseData.crime}</span></div>
-          <div class="info-row"><span class="info-label">اسم الخصم:</span><span class="info-value">${myCaseData.opponent || 'لا يوجد خصم محدد'}</span></div>
-          
-        `;
-        window.currentClientCase = myCaseData;
+      if (allMyCases.length > 0) {
+        caseContainer.innerHTML = ''; // مسح المحتوى القديم
+        allMyCases.forEach((myCaseData, index) => {
+          caseContainer.innerHTML += `
+            <div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 15px;">
+              <h4 style="color:var(--accent-blue); margin: 0 0 10px 0;">📦 قضية رقم (${index + 1}) - نوع: ${myCaseData.category}</h4>
+              <div class="info-row"><span class="info-label">المحكمة/الدائرة:</span><span class="info-value">${myCaseData.dept || ''}</span></div>
+              <div class="info-row"><span class="info-label">رقم الأساس:</span><span class="info-value">${myCaseData.base} / ${myCaseData.year}</span></div>
+              <div class="info-row"><span class="info-label">المدينة:</span><span class="info-value">${myCaseData.city || ''}</span></div>
+              <div class="info-row"><span class="info-label">الموضوع/الجرم:</span><span class="info-value">${myCaseData.subject || myCaseData.crime || ''}</span></div>
+              <div class="info-row"><span class="info-label">الخصم:</span><span class="info-value">${myCaseData.opponent || 'غير محدد'}</span></div>
+            </div>
+          `;
+        });
+        window.currentClientCases = allMyCases;
       }
 
       // 3. البحث عن الوكالة
@@ -2062,7 +2127,7 @@
     // وظائف إدارة قضايا التحقيق
     function saveInvestigationCase() {
       const caseData = {
-        client: document.getElementById('inv-client').value,
+        client: document.getElementById('inv-client').value.trim(),
         clientRole: document.getElementById('inv-client-role').value,
         clientStatus: document.getElementById('inv-client-status').value,
         opponent: document.getElementById('inv-opponent').value,
@@ -2094,13 +2159,10 @@
       } else {
         cases[editingInvestigationIndex] = caseData;
         alert("تم تحديث قضية التحقيق بنجاح!");
-        editingInvestigationIndex = -1;
-        document.querySelector('#investigation-form .action-btn').textContent = "إضافة قضية تحقيق";
       }
 
       localStorage.setItem('portal_investigations', JSON.stringify(cases));
-
-      document.getElementById('investigation-form').reset();
+      resetInvestigationForm();
       updateInvestigationTable();
     }
 
@@ -2173,7 +2235,7 @@
     // وظائف إدارة قضايا الإحالة
     function saveReferralCase() {
       const caseData = {
-        client: document.getElementById('ref-client').value,
+        client: document.getElementById('ref-client').value.trim(),
         clientRole: document.getElementById('ref-client-role').value,
         clientStatus: document.getElementById('ref-client-status').value,
         opponent: document.getElementById('ref-opponent').value,
@@ -2201,13 +2263,10 @@
       } else {
         cases[editingReferralIndex] = caseData;
         alert("تم تحديث قضية الإحالة بنجاح!");
-        editingReferralIndex = -1;
-        document.querySelector('#referral-form .action-btn').textContent = "إضافة قضية إحالة";
       }
 
       localStorage.setItem('portal_referrals', JSON.stringify(cases));
-      
-      document.getElementById('referral-form').reset();
+      resetReferralForm();
       updateReferralTable();
     }
 
@@ -2275,7 +2334,7 @@
     // وظائف إدارة التنفيذ
     function saveExecutionCase() {
       const caseData = {
-        client: document.getElementById('exe-client').value,
+        client: document.getElementById('exe-client').value.trim(),
         clientRole: document.getElementById('exe-client-role').value,
         base: document.getElementById('exe-base').value,
         year: document.getElementById('exe-year').value,
@@ -2301,12 +2360,10 @@
       } else {
         cases[editingExecutionIndex] = caseData;
         alert("تم تحديث ملف التنفيذ بنجاح!");
-        editingExecutionIndex = -1;
-        document.querySelector('#execution-form .action-btn').textContent = "إضافة ملف تنفيذ";
       }
 
       localStorage.setItem('portal_executions', JSON.stringify(cases));
-      document.getElementById('execution-form').reset();
+      resetExecutionForm();
       updateExecutionTable();
     }
 
@@ -2661,6 +2718,88 @@
       printWindow.document.close();
     }
 
+    // وظيفة إرسال تذكير جلسات الغد لجميع الموكلين
+    function sendTomorrowSessionReminders() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowDateString = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
+      const allCases = [
+          ...JSON.parse(localStorage.getItem('portal_investigations') || '[]'),
+          ...JSON.parse(localStorage.getItem('portal_referrals') || '[]'),
+          ...JSON.parse(localStorage.getItem('portal_executions') || '[]'),
+          ...JSON.parse(localStorage.getItem('portal_general_cases') || '[]')
+      ];
+
+      const tomorrowSessions = sessions.filter(s => s.date === tomorrowDateString);
+
+      if (tomorrowSessions.length === 0) {
+          alert("لا توجد جلسات مجدولة ليوم الغد.");
+          return;
+      }
+
+      // Group sessions by client
+      const clientsWithTomorrowSessions = {};
+      tomorrowSessions.forEach(session => {
+          const clientNameMatch = session.caseRef.match(/^(.*?)\s-\sأساس:/);
+          const clientName = clientNameMatch ? clientNameMatch[1].trim() : session.caseRef.trim();
+
+          if (!clientsWithTomorrowSessions[clientName]) {
+              clientsWithTomorrowSessions[clientName] = [];
+          }
+          clientsWithTomorrowSessions[clientName].push(session);
+      });
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (const clientName in clientsWithTomorrowSessions) {
+          const clientSessions = clientsWithTomorrowSessions[clientName];
+          const clientInfo = clients.find(cl => cl.fullname.trim() === clientName);
+
+          if (!clientInfo || (!clientInfo.whatsapp && !clientInfo.phone)) {
+              console.warn(`Client ${clientName} has sessions tomorrow but no contact info.`);
+              failedCount++;
+              continue;
+          }
+
+          let phone = clientInfo.whatsapp || clientInfo.phone;
+          phone = phone.replace(/\D/g, '');
+          if (phone.startsWith('09')) phone = '963' + phone.substring(1);
+          else if (phone.startsWith('9') && phone.length === 9) phone = '963' + phone;
+
+          let message = `*مكتب المحامي محمد النزال*\n\n`;
+          message += `السيد/ة *${clientName}* المحترم/ة،\n\n`;
+          message += `نود تذكيركم بمواعيد جلساتكم القضائية ليوم الغد *${tomorrowDateString}*:\n\n`;
+
+          clientSessions.forEach((session, idx) => {
+              message += `*الجلسة رقم ${idx + 1}:*\n`;
+              message += `📅 *التاريخ:* ${session.date}\n`;
+              if (session.time) message += `⏰ *الوقت:* ${session.time}\n`;
+              message += `🏛️ *المكان:* ${session.court}\n`;
+              if (session.notes) message += `📝 *الإجراء المتوقع:* ${session.notes}\n`;
+              
+              // Try to find specific case details for this session (using caseRef from session)
+              const caseRefParts = session.caseRef.match(/أساس:\s(\d+)\/(\d{4})/);
+              const caseDetails = caseRefParts ? allCases.find(c => c.client.trim() === clientName && c.base === caseRefParts[1] && c.year === caseRefParts[2]) : null;
+              if (caseDetails) {
+                  message += `🔢 *رقم الأساس:* ${caseDetails.base} / ${caseDetails.year}\n`;
+                  message += `⚖️ *نوع القضية:* ${caseDetails.type || caseDetails.crime || 'غير محدد'}\n`;
+              }
+              message += `\n`; // Add a newline between sessions
+          });
+
+          message += `يرجى الحضور في المواعيد المحددة. لا تتردد بالتواصل معنا عند وجود أي استفسار، نقدر ثقتكم.`;
+
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+          sentCount++;
+      }
+
+      alert(`تم فتح ${sentCount} نافذة واتساب لإرسال تذكيرات جلسات الغد. ${failedCount > 0 ? `فشل إرسال ${failedCount} تذكير بسبب عدم توفر معلومات الاتصال.` : ''}`);
+    }
+
     // وظيفة حفظ القضايا العامة (إدارة القضايا) وربطها بالموكلين
     function saveGeneralCase() {
       const caseData = {
@@ -2672,7 +2811,7 @@
         subject: document.getElementById('case-subject').value,
         opponent: document.getElementById('opponent').value,
         opponentRole: document.getElementById('opponent-role').value,
-        client: document.getElementById('client-full-name').value,
+        client: document.getElementById('client-full-name').value.trim(),
         clientRole: document.getElementById('client-role').value,
         firstSession: document.getElementById('first-session-date').value,
         timestamp: new Date().getTime(),
