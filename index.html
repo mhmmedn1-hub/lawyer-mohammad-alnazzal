@@ -381,6 +381,11 @@
     .status-new { background: rgba(43, 145, 218, 0.2); color: #2b91da; }
     .status-active { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
 
+    .session-today {
+      background: rgba(212, 175, 55, 0.1) !important;
+      border-right: 4px solid var(--accent-gold);
+    }
+
     .action-btn {
       background: var(--accent-blue); color: white; border: none; padding: 8px 16px; 
       border-radius: 10px; cursor: pointer; font-size: 0.9rem;
@@ -403,10 +408,59 @@
     }
 
     @media (max-width: 980px) {
-      .grid { grid-template-columns: 1fr; }
-      #lawyer-dashboard { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
+      .grid { 
+        grid-template-columns: 1fr; 
+        padding: 15px;
+      }
+      #lawyer-dashboard { 
+        grid-template-columns: 1fr; 
+      }
+      .sidebar { 
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px;
+        gap: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+        scrollbar-width: none; /* Firefox */
+      }
+      .sidebar::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+      
+      .sidebar > div:first-child { display: none; } /* إخفاء شعار المكتب الكبير في الجوال لتوفير مساحة */
+      
+      .nav-item {
+        white-space: nowrap;
+        padding: 8px 15px;
+        font-size: 0.85rem;
+        border-right: none !important;
+        border-bottom: 2px solid transparent;
+      }
+      .nav-item.active {
+        border-bottom: 2px solid var(--accent-blue);
+      }
+
+      .main-content { padding: 20px 15px; }
+      .stat-row { grid-template-columns: 1fr 1fr; gap: 15px; }
+      .form-row { grid-template-columns: 1fr; gap: 15px; }
+      
+      .syrian-flag { width: 60px; height: 35px; top: 10px; left: 10px; }
+      .intro h1 { font-size: 1.6rem; }
     }
+
+    @media (max-width: 480px) {
+      .stat-row { grid-template-columns: 1fr; }
+    }
+
+    /* تحسين لتخطيط الحقول الثلاثية */
+    .form-row-triple {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) { .form-row-triple { grid-template-columns: 1fr; } }
 
     /* Syrian Flag Styling */
     .syrian-flag {
@@ -501,6 +555,11 @@
     }
     .zoom-btn:hover { transform: scale(1.15); background: #f1d27b; }
 
+    /* Scripts for Export Functionality */
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
   </style>
 </head>
 <body>
@@ -579,9 +638,9 @@
       <div class="nav-item" data-target="case-management-section">📂 إدارة القضايا</div>
       <div class="nav-item" data-target="clients-management-section">👤 الموكلين</div>
       <div class="nav-item" data-target="agencies-management-section">📜 الوكالات</div>
-      <div class="nav-item">� قضايا التحقيق</div>
-      <div class="nav-item">🔍 قضايا التحقيق</div>
-      <div class="nav-item">🔃 قضايا الإحالة</div>
+      <div class="nav-item" data-target="investigation-cases-section">🔍 قضايا التحقيق</div>
+      <div class="nav-item" data-target="referral-cases-section">🔃 قضايا الإحالة</div>
+      <div class="nav-item" data-target="sessions-management-section">📅 الجلسات القادمة</div>
       <div class="nav-item">⚖️ التنفيذ</div>
       <div class="nav-item">📑 دراسة الدعوى</div>
       <div class="nav-item">💰 الأتعاب</div>
@@ -612,7 +671,7 @@
         <div class="panel-section">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="margin:0">آخر التحديثات</h2>
-            <button class="action-btn" style="background:var(--accent-green)" onclick="alert('واجهة إضافة موكل جديد')">+ تسجيل موكل جديد</button>
+            <button class="action-btn" style="background:var(--accent-green)" onclick="window.location.href='client_portal_registration.html'">+ تسجيل موكل جديد</button>
           </div>
           <table class="data-table">
             <thead>
@@ -643,6 +702,7 @@
                 <td><button class="action-btn" style="background:none; border:1px solid #333">تفاصيل</button></td>
               </tr>
             </tbody>
+            <tbody id="dashboard-updates-tbody"></tbody>
           </table>
         </div>
       </section>
@@ -901,6 +961,236 @@
         </div>
       </section>
 
+      <!-- قسم قضايا التحقيق (Investigation Cases) -->
+      <section id="investigation-cases-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">إدارة قضايا التحقيق</h2>
+        <form class="case-form" id="investigation-form">
+          <div class="form-row-triple">
+            <div class="form-group">
+              <label>اسم الموكل</label>
+              <input type="text" id="inv-client" list="clients-datalist" placeholder="ابدأ بكتابة اسم الموكل..." required>
+            </div>
+            <div class="form-group">
+              <label>الصفة</label>
+              <select id="inv-client-role" required>
+                <option value="مدعي">مدعي</option>
+                <option value="ظنين">ظنين</option>
+                <option value="متهم">متهم</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>الحالة</label>
+              <select id="inv-client-status" required>
+                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="موقوف">موقوف</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-triple">
+            <div class="form-group">
+              <label>اسم الخصم</label>
+              <input type="text" id="inv-opponent" placeholder="اسم الخصم">
+            </div>
+            <div class="form-group">
+              <label>الصفة</label>
+              <select id="inv-opponent-role">
+                <option value="مدعي">مدعي</option>
+                <option value="ظنين">ظنين</option>
+                <option value="متهم">متهم</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>الحالة</label>
+              <select id="inv-opponent-status">
+                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="موقوف">موقوف</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="form-group"><label>رقم الأساس</label><input type="text" id="inv-base" placeholder="رقم الأساس"></div>
+              <div class="form-group"><label>العام</label><input type="text" id="inv-year" placeholder="2024"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="form-group"><label>الدائرة</label><input type="text" id="inv-dept" placeholder="اسم الدائرة"></div>
+              <div class="form-group"><label>المدينة</label><input type="text" id="inv-city" placeholder="المدينة"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>الجرم</label><input type="text" id="inv-crime" placeholder="نوع الجرم"></div>
+            <div class="form-group"><label>موضوع الجرم</label><input type="text" id="inv-subject" placeholder="تفاصيل الجرم"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>رقم الضبط</label><input type="text" id="inv-rec-num"></div>
+            <div class="form-group"><label>تاريخ الضبط</label><input type="date" id="inv-rec-date"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>مكان تنظيم الضبط</label><input type="text" id="inv-rec-place"></div>
+            <div class="form-group"><label>رقم وارد النيابة العامة</label><input type="text" id="inv-pros-num"></div>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveInvestigationCase()">إضافة قضية تحقيق</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0">سجل قضايا التحقيق المحفوظة</h3>
+            <input type="text" id="investigation-search" placeholder="بحث سريع (الموكل، الخصم، الأساس)..." oninput="updateInvestigationTable()" 
+                   style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل</th>
+                <th>الخصم</th>
+                <th>الأساس/العام</th>
+                <th>الجرم</th>
+                <th>الدائرة</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="investigation-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- قسم قضايا الإحالة (Referral Cases) -->
+      <section id="referral-cases-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">إدارة قضايا الإحالة</h2>
+        <form class="case-form" id="referral-form">
+          <div class="form-row-triple">
+            <div class="form-group">
+              <label>اسم الموكل</label>
+              <input type="text" id="ref-client" list="clients-datalist" placeholder="ابدأ بكتابة اسم الموكل..." required>
+            </div>
+            <div class="form-group">
+              <label>الصفة</label>
+              <select id="ref-client-role" required>
+                <option value="مدعي">مدعي</option>
+                <option value="ظنين">ظنين</option>
+                <option value="متهم">متهم</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>الحالة</label>
+              <select id="ref-client-status" required>
+                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="موقوف">موقوف</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-triple">
+            <div class="form-group">
+              <label>اسم الخصم</label>
+              <input type="text" id="ref-opponent" placeholder="اسم الخصم">
+            </div>
+            <div class="form-group">
+              <label>الصفة</label>
+              <select id="ref-opponent-role">
+                <option value="مدعي">مدعي</option>
+                <option value="ظنين">ظنين</option>
+                <option value="متهم">متهم</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>الحالة</label>
+              <select id="ref-opponent-status">
+                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="موقوف">موقوف</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="form-group"><label>رقم الأساس</label><input type="text" id="ref-base" placeholder="رقم الأساس"></div>
+              <div class="form-group"><label>العام</label><input type="text" id="ref-year" placeholder="2024"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div class="form-group"><label>الدائرة</label><input type="text" id="ref-dept" placeholder="اسم الدائرة"></div>
+              <div class="form-group"><label>المدينة</label><input type="text" id="ref-city" placeholder="المدينة"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>الجرم</label><input type="text" id="ref-crime" placeholder="نوع الجرم"></div>
+            <div class="form-group"><label>موضوع الجرم</label><input type="text" id="ref-subject" placeholder="تفاصيل الجرم"></div>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveReferralCase()">إضافة قضية إحالة</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0">سجل قضايا الإحالة المحفوظة</h3>
+            <input type="text" id="referral-search" placeholder="بحث سريع (الموكل، الخصم، الأساس)..." oninput="updateReferralTable()" 
+                   style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل</th>
+                <th>الخصم</th>
+                <th>الأساس/العام</th>
+                <th>الجرم</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="referral-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- قسم إدارة الجلسات (Sessions Management) -->
+      <section id="sessions-management-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">جدولة الجلسات القادمة</h2>
+        <form class="case-form" id="session-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>رقم الدعوى / اسم الموكل</label>
+              <input type="text" id="sess-case-ref" list="all-cases-datalist" placeholder="اختر القضية أو الموكل..." required>
+              <datalist id="all-cases-datalist"></datalist>
+            </div>
+            <div class="form-group">
+              <label>المحكمة / الدائرة / القاعة</label>
+              <input type="text" id="sess-court" placeholder="مكان انعقاد الجلسة">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>تاريخ الجلسة</label>
+              <input type="date" id="sess-date" required>
+            </div>
+            <div class="form-group">
+              <label>وقت الجلسة</label>
+              <input type="time" id="sess-time">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>الإجراء المطلوب / ملاحظات الجلسة</label>
+            <textarea id="sess-notes" rows="2" placeholder="ما هو المطلوب في هذه الجلسة؟"></textarea>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveSession()">حفظ وجدولة الجلسة</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0">قائمة الجلسات المجدولة (مرتبة حسب التاريخ)</h3>
+            <input type="text" id="session-search" placeholder="بحث عن جلسة (موكل، مكان)..." oninput="updateSessionsTable()" 
+                   style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>القضية / الموكل</th>
+                <th>التاريخ والوقت</th>
+                <th>المكان</th>
+                <th>الملاحظات</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -967,6 +1257,10 @@
     }
 
     let editingClientIndex = -1;
+    let editingInvestigationIndex = -1;
+    let editingAgencyIndex = -1;
+    let editingReferralIndex = -1;
+    let editingSessionIndex = -1;
 
     // وظائف إدارة الموكلين
     function addClient() {
@@ -1185,19 +1479,28 @@
         }
 
         const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
-        agencies.push({
+        const agencyData = {
           clientName,
           scope,
           type,
           date,
           place,
           details,
-          image: imageData,
+          image: imageData || (editingAgencyIndex !== -1 ? agencies[editingAgencyIndex].image : null),
           timestamp: new Date().getTime()
-        });
+        };
+
+        if (editingAgencyIndex === -1) {
+          agencies.push(agencyData);
+          alert("تم إضافة الوكالة بنجاح!");
+        } else {
+          agencies[editingAgencyIndex] = agencyData;
+          alert("تم تحديث بيانات الوكالة بنجاح!");
+          editingAgencyIndex = -1;
+          document.querySelector('#agency-form .action-btn').textContent = "إضافة وكالة";
+        }
 
         localStorage.setItem('portal_agencies', JSON.stringify(agencies));
-        alert("تم إضافة الوكالة بنجاح!");
         
         document.getElementById('agency-form').reset();
         document.getElementById('judicial-fields').style.display = 'none';
@@ -1238,11 +1541,46 @@
           <td>${agency.place}</td>
           <td>
             ${agency.image ? `<button class="action-btn" style="background:var(--accent-gold); margin-left:5px;" onclick="openImageModal('${agency.image}')" title="عرض الوكالة">👁️</button>` : ''}
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editAgency(${originalIndex})" title="تعديل">تعديل</button>
             <button class="action-btn" style="background: #ef4444;" onclick="deleteAgency(${originalIndex})" title="حذف">حذف</button>
           </td>
         </tr>`;
         tbody.innerHTML += row;
       });
+    }
+
+    function editAgency(index) {
+      const agencies = JSON.parse(localStorage.getItem('portal_agencies') || '[]');
+      const a = agencies[index];
+      if (!a) return;
+
+      editingAgencyIndex = index;
+      document.getElementById('agency-client-name').value = a.clientName;
+      document.getElementById('agency-scope').value = a.scope;
+      document.getElementById('agency-type').value = a.type;
+      document.getElementById('agency-date').value = a.date;
+      document.getElementById('agency-place').value = a.place;
+
+      toggleAgencyFields();
+
+      // استخراج القيم من نص التفاصيل (Details)
+      if (a.type === 'قضائية') {
+        const matches = a.details.match(/سجل: (.*) \/ متسلسل: (.*)/);
+        if (matches) {
+          document.getElementById('j-record').value = matches[1];
+          document.getElementById('j-serial').value = matches[2];
+        }
+      } else {
+        const matches = a.details.match(/عام: (.*) \/ خاص: (.*) \/ سجل: (.*)/);
+        if (matches) {
+          document.getElementById('n-year').value = matches[1];
+          document.getElementById('n-private').value = matches[2];
+          document.getElementById('n-record').value = matches[3];
+        }
+      }
+
+      document.querySelector('#agency-form .action-btn').textContent = "تحديث بيانات الوكالة";
+      document.getElementById('agency-form').scrollIntoView({ behavior: 'smooth' });
     }
 
     let currentZoom = 1;
@@ -1281,6 +1619,436 @@
       }
     }
 
+    // وظائف إدارة قضايا التحقيق
+    function saveInvestigationCase() {
+      const caseData = {
+        client: document.getElementById('inv-client').value,
+        clientRole: document.getElementById('inv-client-role').value,
+        clientStatus: document.getElementById('inv-client-status').value,
+        opponent: document.getElementById('inv-opponent').value,
+        opponentRole: document.getElementById('inv-opponent-role').value,
+        opponentStatus: document.getElementById('inv-opponent-status').value,
+        base: document.getElementById('inv-base').value,
+        year: document.getElementById('inv-year').value,
+        dept: document.getElementById('inv-dept').value,
+        city: document.getElementById('inv-city').value,
+        crime: document.getElementById('inv-crime').value,
+        subject: document.getElementById('inv-subject').value,
+        recNum: document.getElementById('inv-rec-num').value,
+        recDate: document.getElementById('inv-rec-date').value,
+        recPlace: document.getElementById('inv-rec-place').value,
+        prosNum: document.getElementById('inv-pros-num').value
+        prosNum: document.getElementById('inv-pros-num').value,
+        timestamp: new Date().getTime()
+      };
+
+      if (!caseData.client || !caseData.base || !caseData.year) {
+        alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
+        return;
+      }
+
+      const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+
+      if (editingInvestigationIndex === -1) {
+        cases.push(caseData);
+        alert("تم حفظ قضية التحقيق بنجاح!");
+      } else {
+        cases[editingInvestigationIndex] = caseData;
+        alert("تم تحديث قضية التحقيق بنجاح!");
+        editingInvestigationIndex = -1;
+        document.querySelector('#investigation-form .action-btn').textContent = "إضافة قضية تحقيق";
+      }
+
+      localStorage.setItem('portal_investigations', JSON.stringify(cases));
+
+      document.getElementById('investigation-form').reset();
+      updateInvestigationTable();
+    }
+
+    function updateInvestigationTable() {
+      const searchTerm = (document.getElementById('investigation-search')?.value || '').toLowerCase();
+      const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+      const tbody = document.getElementById('investigation-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const filtered = cases.filter(c => 
+        c.client.toLowerCase().includes(searchTerm) || 
+        c.opponent.toLowerCase().includes(searchTerm) || 
+        c.base.includes(searchTerm)
+      );
+
+      filtered.reverse().forEach((c) => {
+        const originalIndex = cases.indexOf(c);
+        tbody.innerHTML += `<tr>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole})</td>
+          <td>${c.opponent || '-'}</td>
+          <td>${c.base}/${c.year}</td>
+          <td>${c.crime}</td>
+          <td>${c.dept} / ${c.city}</td>
+          <td>
+            <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('investigation', ${originalIndex})">طباعة وصل</button>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editInvestigationCase(${originalIndex})">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteInvestigationCase(${originalIndex})">حذف</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function deleteInvestigationCase(index) {
+      if (confirm("هل أنت متأكد من حذف هذه القضية؟")) {
+        const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+        cases.splice(index, 1);
+        localStorage.setItem('portal_investigations', JSON.stringify(cases));
+        updateInvestigationTable();
+      }
+    }
+
+    function editInvestigationCase(index) {
+      const cases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+      const c = cases[index];
+      if (!c) return;
+
+      editingInvestigationIndex = index;
+      document.getElementById('inv-client').value = c.client;
+      document.getElementById('inv-client-role').value = c.clientRole;
+      document.getElementById('inv-client-status').value = c.clientStatus;
+      document.getElementById('inv-opponent').value = c.opponent;
+      document.getElementById('inv-opponent-role').value = c.opponentRole;
+      document.getElementById('inv-opponent-status').value = c.opponentStatus;
+      document.getElementById('inv-base').value = c.base;
+      document.getElementById('inv-year').value = c.year;
+      document.getElementById('inv-dept').value = c.dept;
+      document.getElementById('inv-city').value = c.city;
+      document.getElementById('inv-crime').value = c.crime;
+      document.getElementById('inv-subject').value = c.subject;
+      document.getElementById('inv-rec-num').value = c.recNum;
+      document.getElementById('inv-rec-date').value = c.recDate;
+      document.getElementById('inv-rec-place').value = c.recPlace;
+      document.getElementById('inv-pros-num').value = c.prosNum;
+
+      document.querySelector('#investigation-form .action-btn').textContent = "تحديث قضية التحقيق";
+      document.getElementById('investigation-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // وظائف إدارة قضايا الإحالة
+    function saveReferralCase() {
+      const caseData = {
+        client: document.getElementById('ref-client').value,
+        clientRole: document.getElementById('ref-client-role').value,
+        clientStatus: document.getElementById('ref-client-status').value,
+        opponent: document.getElementById('ref-opponent').value,
+        opponentRole: document.getElementById('ref-opponent-role').value,
+        opponentStatus: document.getElementById('ref-opponent-status').value,
+        base: document.getElementById('ref-base').value,
+        year: document.getElementById('ref-year').value,
+        dept: document.getElementById('ref-dept').value,
+        city: document.getElementById('ref-city').value,
+        crime: document.getElementById('ref-crime').value,
+        subject: document.getElementById('ref-subject').value
+        subject: document.getElementById('ref-subject').value,
+        timestamp: new Date().getTime()
+      };
+
+      if (!caseData.client || !caseData.base || !caseData.year) {
+        alert("يرجى إكمال البيانات الأساسية (الموكل، رقم الأساس، العام)");
+        return;
+      }
+
+      const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+
+      if (editingReferralIndex === -1) {
+        cases.push(caseData);
+        alert("تم حفظ قضية الإحالة بنجاح!");
+      } else {
+        cases[editingReferralIndex] = caseData;
+        alert("تم تحديث قضية الإحالة بنجاح!");
+        editingReferralIndex = -1;
+        document.querySelector('#referral-form .action-btn').textContent = "إضافة قضية إحالة";
+      }
+
+      localStorage.setItem('portal_referrals', JSON.stringify(cases));
+      
+      document.getElementById('referral-form').reset();
+      updateReferralTable();
+    }
+
+    function updateReferralTable() {
+      const searchTerm = (document.getElementById('referral-search')?.value || '').toLowerCase();
+      const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+      const tbody = document.getElementById('referral-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const filtered = cases.filter(c => 
+        c.client.toLowerCase().includes(searchTerm) || 
+        c.opponent.toLowerCase().includes(searchTerm) || 
+        c.base.includes(searchTerm)
+      );
+
+      filtered.reverse().forEach((c) => {
+        const originalIndex = cases.indexOf(c);
+        tbody.innerHTML += `<tr>
+          <td style="color:var(--accent-gold); font-weight:600;">${c.client} (${c.clientRole})</td>
+          <td>${c.opponent || '-'}</td>
+          <td>${c.base}/${c.year}</td>
+          <td>${c.crime}</td>
+          <td>
+            <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('referral', ${originalIndex})">طباعة وصل</button>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editReferralCase(${originalIndex})">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteReferralCase(${originalIndex})">حذف</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function editReferralCase(index) {
+      const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+      const c = cases[index];
+      if (!c) return;
+
+      editingReferralIndex = index;
+      document.getElementById('ref-client').value = c.client;
+      document.getElementById('ref-client-role').value = c.clientRole;
+      document.getElementById('ref-client-status').value = c.clientStatus;
+      document.getElementById('ref-opponent').value = c.opponent;
+      document.getElementById('ref-opponent-role').value = c.opponentRole;
+      document.getElementById('ref-opponent-status').value = c.opponentStatus;
+      document.getElementById('ref-base').value = c.base;
+      document.getElementById('ref-year').value = c.year;
+      document.getElementById('ref-dept').value = c.dept;
+      document.getElementById('ref-city').value = c.city;
+      document.getElementById('ref-crime').value = c.crime;
+      document.getElementById('ref-subject').value = c.subject;
+
+      document.querySelector('#referral-form .action-btn').textContent = "تحديث قضية الإحالة";
+      document.getElementById('referral-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteReferralCase(index) {
+      if (confirm("هل أنت متأكد من حذف هذه القضية؟")) {
+        const cases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+        cases.splice(index, 1);
+        localStorage.setItem('portal_referrals', JSON.stringify(cases));
+        updateReferralTable();
+      }
+    }
+
+    // وظائف إدارة الجلسات
+    function populateAllCasesDatalist() {
+      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]');
+      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]');
+      const datalist = document.getElementById('all-cases-datalist');
+      if (!datalist) return;
+      
+      datalist.innerHTML = '';
+      // دمج أسماء الموكلين وأرقام الأساس لسهولة الاختيار
+      const combined = [...invCases, ...refCases].map(c => `${c.client} - أساس: ${c.base}/${c.year}`);
+      [...new Set(combined)].forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        datalist.appendChild(option);
+      });
+    }
+
+    function saveSession() {
+      const sessionData = {
+        caseRef: document.getElementById('sess-case-ref').value,
+        court: document.getElementById('sess-court').value,
+        date: document.getElementById('sess-date').value,
+        time: document.getElementById('sess-time').value,
+        notes: document.getElementById('sess-notes').value,
+        timestamp: new Date().getTime()
+      };
+
+      if (!sessionData.caseRef || !sessionData.date) {
+        alert("يرجى إدخال اسم الموكل/القضية وتاريخ الجلسة");
+        return;
+      }
+
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+
+      if (editingSessionIndex === -1) {
+        sessions.push(sessionData);
+        alert("تم جدولة الجلسة بنجاح!");
+      } else {
+        sessions[editingSessionIndex] = sessionData;
+        alert("تم تحديث بيانات الجلسة!");
+        editingSessionIndex = -1;
+        document.querySelector('#session-form .action-btn').textContent = "حفظ وجدولة الجلسة";
+      }
+
+      localStorage.setItem('portal_sessions', JSON.stringify(sessions));
+      document.getElementById('session-form').reset();
+      updateSessionsTable();
+    }
+
+    function updateSessionsTable() {
+      const searchTerm = (document.getElementById('session-search')?.value || '').toLowerCase();
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+      const tbody = document.getElementById('sessions-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // فرز الجلسات من الأقرب تاريخياً إلى الأبعد
+      const filtered = sessions.filter(s => 
+        s.caseRef.toLowerCase().includes(searchTerm) || 
+        s.court.toLowerCase().includes(searchTerm)
+      ).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      filtered.forEach((s) => {
+        const originalIndex = sessions.indexOf(s);
+        const isToday = s.date === today;
+        const rowClass = isToday ? 'class="session-today"' : '';
+
+        tbody.innerHTML += `<tr ${rowClass}>
+          <td style="color:var(--accent-gold); font-weight:600;">${s.caseRef}</td>
+          <td><span style="color:${isToday ? 'var(--accent-gold)' : 'var(--accent-green)'}; font-weight:${isToday ? 'bold' : 'normal'}">${s.date}</span> ${s.time ? `| ${s.time}` : ''}</td>
+          <td>${s.court}</td>
+          <td style="font-size:0.85rem; color:var(--gray-silver)">${s.notes}</td>
+          <td>
+            <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editSession(${originalIndex})">تعديل</button>
+            <button class="action-btn" style="background: #ef4444;" onclick="deleteSession(${originalIndex})">حذف</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function editSession(index) {
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+      const s = sessions[index];
+      if (!s) return;
+
+      editingSessionIndex = index;
+      document.getElementById('sess-case-ref').value = s.caseRef;
+      document.getElementById('sess-court').value = s.court;
+      document.getElementById('sess-date').value = s.date;
+      document.getElementById('sess-time').value = s.time;
+      document.getElementById('sess-notes').value = s.notes;
+
+      document.querySelector('#session-form .action-btn').textContent = "تحديث بيانات الجلسة";
+      document.getElementById('session-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteSession(index) {
+      if (confirm("هل أنت متأكد من حذف هذه الجلسة؟")) {
+        const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+        sessions.splice(index, 1);
+        localStorage.setItem('portal_sessions', JSON.stringify(sessions));
+        updateSessionsTable();
+      }
+    }
+
+    // وظيفة طباعة وصل القضية
+    function printCaseReceipt(type, index) {
+      const storageKey = type === 'investigation' ? 'portal_investigations' : 'portal_referrals';
+      const cases = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const c = cases[index];
+      if (!c) return;
+
+      const printWindow = window.open('', '_blank');
+      const title = type === 'investigation' ? 'وصل قضية تحقيق' : 'وصل قضية إحالة';
+      
+      let detailsHtml = `
+        <div style="direction: rtl; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; border: 2px solid #333; border-radius: 15px; max-width: 800px; margin: 20px auto; position: relative; color: #000; background: #fff;">
+          <div style="text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #d4af37;">مكتب المحامي محمد النزال</h1>
+            <p style="margin: 5px 0;">للمحاماة والاستشارات القانونية</p>
+            <h2 style="background: #f4f4f4; display: inline-block; padding: 10px 30px; border-radius: 8px; margin-top: 15px; color: #333; border: 1px solid #ddd;">${title}</h2>
+          </div>
+          
+          <table style="width: 100%; border-collapse: collapse; font-size: 1.1rem; color: #000;">
+            <tr><td style="padding: 12px; font-weight: bold; width: 30%; border-bottom: 1px solid #eee;">اسم الموكل:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.client} (${c.clientRole} - ${c.clientStatus})</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">اسم الخصم:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.opponent || '-'} (${c.opponentRole || '-'} - ${c.opponentStatus || '-'})</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">رقم الأساس / العام:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.base} / ${c.year}</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">الدائرة / المدينة:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.dept} / ${c.city}</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">الجرم:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.crime}</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">موضوع الجرم:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.subject}</td></tr>
+      `;
+
+      if (type === 'investigation') {
+        detailsHtml += `
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">رقم الضبط / تاريخه:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.recNum} تاريخ ${c.recDate}</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">مكان الضبط:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.recPlace}</td></tr>
+            <tr><td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #eee;">وارد النيابة العامة:</td><td style="padding: 12px; border-bottom: 1px solid #eee;">${c.prosNum}</td></tr>
+        `;
+      }
+
+      detailsHtml += `
+          </table>
+          
+          <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="font-size: 0.9rem; color: #444;">تحريراً في: ${new Date().toLocaleDateString('ar-EG')}</div>
+            <div style="text-align: center; min-width: 200px;">
+              <p style="margin-bottom: 40px; font-weight: bold;">ختم وتوقيع المكتب</p>
+              <div style="height: 100px; border: 1px dashed #ccc; background: #fafafa;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${title} - ${c.client}</title>
+            <style>body { margin: 0; padding: 20px; background: #fff; }</style>
+          </head>
+          <body onload="window.print(); window.onafterprint = () => window.close();">
+            ${detailsHtml}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    // وظيفة تحديث بيانات لوحة التحكم الرئيسية (الإحصائيات وآخر التحديثات)
+    function refreshDashboardData() {
+      const invCases = JSON.parse(localStorage.getItem('portal_investigations') || '[]').map(c => ({...c, typeLabel: 'تحقيق'}));
+      const refCases = JSON.parse(localStorage.getItem('portal_referrals') || '[]').map(c => ({...c, typeLabel: 'إحالة'}));
+      const clients = JSON.parse(localStorage.getItem('portal_clients') || '[]');
+      const sessions = JSON.parse(localStorage.getItem('portal_sessions') || '[]');
+      
+      // دمج كافة القضايا وفرزها حسب التوقيت الزمني (الأحدث أولاً)
+      const allCases = [...invCases, ...refCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      
+      // تحديث البطاقات الإحصائية (Stat Cards)
+      const stats = document.querySelectorAll('.stat-card .number');
+      if (stats.length >= 4) {
+        stats[0].textContent = invCases.length + refCases.length; // إجمالي القضايا
+        stats[1].textContent = allCases.filter(c => c.clientStatus === 'موقوف').length; // قضايا قيد النظر (موقوفين)
+        const today = new Date().toISOString().split('T')[0];
+        stats[2].textContent = sessions.filter(s => s.date === today).length; // جلسات اليوم
+        stats[3].textContent = clients.length; // عدد الموكلين
+      }
+
+      // تحديث جدول "آخر التحديثات"
+      const tbody = document.getElementById('dashboard-updates-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      // عرض آخر 5 قضايا مضافة أو معدلة
+      allCases.slice(0, 5).forEach(c => {
+        const statusClass = c.clientStatus === 'موقوف' ? 'status-new' : 'status-active';
+        tbody.innerHTML += `
+          <tr>
+            <td>${c.base}/${c.year}</td>
+            <td style="font-weight:600;">${c.client}</td>
+            <td>${c.typeLabel} - ${c.crime}</td>
+            <td>${c.dept}</td>
+            <td><span class="status-badge ${statusClass}">${c.clientStatus}</span></td>
+            <td>
+              <button class="action-btn" style="background:none; border:1px solid var(--accent-blue); color:var(--accent-blue);" 
+                onclick="showSection('${c.typeLabel === 'تحقيق' ? 'investigation-cases-section' : 'referral-cases-section'}')">
+                تفاصيل
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
     // Function to show a specific section and hide others
     function showSection(sectionId) {
       const sections = document.querySelectorAll('.main-content section');
@@ -1289,13 +2057,22 @@
       });
       document.getElementById(sectionId).style.display = 'block';
 
+      if (sectionId === 'dashboard-overview-section') {
+        refreshDashboardData();
+      }
+
       if (sectionId === 'clients-management-section') {
         updateClientsTable();
       }
       
-      if (sectionId === 'agencies-management-section') {
+      // تحديث قائمة الموكلين في كافة الأقسام التي تحتاج إكمال تلقائي
+      if (['agencies-management-section', 'investigation-cases-section', 'referral-cases-section', 'sessions-management-section'].includes(sectionId)) {
         populateClientsDatalist();
-        updateAgenciesTable();
+        if (sectionId === 'sessions-management-section') populateAllCasesDatalist();
+        if (sectionId === 'agencies-management-section') updateAgenciesTable();
+        if (sectionId === 'investigation-cases-section') updateInvestigationTable();
+        if (sectionId === 'referral-cases-section') updateReferralTable();
+        if (sectionId === 'sessions-management-section') updateSessionsTable();
       }
 
       // Update active state in sidebar
