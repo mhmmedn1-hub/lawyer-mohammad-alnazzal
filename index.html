@@ -284,8 +284,9 @@
 
     .main-content {
       padding: 30px 40px;
-      overflow-y: auto;
-      height: 100vh;
+      display: flex; /* Added: Make it a flex container */
+      flex-direction: column; /* Added: Arrange items vertically */
+      /* Removed: overflow-y: auto; height: 100vh; */
     }
 
     .dashboard-header {
@@ -317,6 +318,9 @@
       border-radius: 32px;
       padding: 30px;
       backdrop-filter: blur(10px);
+      flex-grow: 1; /* Added: Allow sections to grow and fill available vertical space */
+      overflow-y: auto; /* Moved from main-content: Add scrollbar to the section if content overflows */
+      min-height: 0; /* Added: Allow flex item to shrink when needed, important with overflow-y */
     }
 
     .data-table {
@@ -640,6 +644,29 @@
     .facebook-btn { background: #1877F2; box-shadow: 0 10px 20px rgba(24, 119, 242, 0.25); }
     .facebook-btn:hover { background: #0d65d9; transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 30px rgba(24, 119, 242, 0.4); }
 
+    /* تنسيق مربعات العمل الإداري */
+    .admin-task-square {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      padding: 15px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100px;
+      transition: 0.3s;
+    }
+    .admin-task-square.completed { border-color: var(--accent-green); opacity: 0.7; }
+    .admin-task-square.completed span { text-decoration: line-through; color: var(--gray-silver); }
+    .admin-task-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-green); }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      padding-bottom: 5px;
+    }
     @media (max-width: 768px) {
       .client-grid { grid-template-columns: 1fr; }
       .client-welcome-header { flex-direction: column; text-align: center; gap: 20px; }
@@ -730,6 +757,33 @@
         <button class="action-btn" style="background:#ef4444;" onclick="location.reload()">تسجيل الخروج 🚪</button>
       </div>
 
+      <!-- حاوية التنبيهات الجديدة -->
+      <div id="client-notifications-area"></div>
+
+      <style>
+        @keyframes pulse-gold {
+          0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+        .decision-alert {
+          background: linear-gradient(135deg, rgba(197, 160, 89, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+          border: 1px solid var(--accent-gold);
+          border-right: 5px solid var(--accent-gold);
+          padding: 20px;
+          border-radius: 16px;
+          margin-bottom: 25px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          animation: slideDown 0.5s ease, pulse-gold 2s infinite;
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      </style>
+
       <div class="client-grid">
         <!-- بطاقة تفاصيل القضية -->
         <div class="client-card">
@@ -744,14 +798,25 @@
           </div>
         </div>
 
-        <!-- بطاقة الوكالة والبيانات الشخصية -->
+        <!-- بطاقة البيانات الشخصية -->
         <div class="client-card">
-          <h3>📜 بيانات الوكالة</h3>
-          <div id="client-agency-details">
-            <p style="text-align:center; color:var(--gray-silver);">لا توجد وكالة مسجلة</p>
-          </div>
-          <h3 style="margin-top:20px;">👤 بياناتي الشخصية</h3>
+          <h3>👤 بياناتي الشخصية</h3>
           <div id="client-personal-info"></div>
+        </div>
+
+        <!-- بطاقة الحالة المالية والأتعاب -->
+        <div class="client-card">
+          <h3>💰 الحالة المالية والأتعاب</h3>
+          <div id="client-finance-summary">
+            <div class="info-row"><span class="info-label">إجمالي الأتعاب المتفق عليها:</span><span class="info-value" id="c-total-fees">0</span></div>
+            <div class="info-row"><span class="info-label">إجمالي المبالغ المسددة:</span><span class="info-value" id="c-paid-fees" style="color:var(--accent-green)">0</span></div>
+            <div class="info-row"><span class="info-label">المبلغ المتبقي:</span><span class="info-value" id="c-remaining-fees" style="color:#ef4444">0</span></div>
+          </div>
+          <h4 style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">📊 سجل الدفعات المسددة</h4>
+          <table class="data-table" style="font-size:0.85rem">
+            <thead><tr><th>التاريخ</th><th>المبلغ</th></tr></thead>
+            <tbody id="client-payments-history"></tbody>
+          </table>
         </div>
 
         <!-- بطاقة التواصل المباشر والاستفسارات -->
@@ -804,6 +869,8 @@
     <aside class="sidebar">
       <div style="font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 40px; text-align: center;">⚖️ مكتب المحامي محمد النزال</div>
       <div class="nav-item active" data-target="dashboard-overview-section">🏠 الرئيسية</div>
+      <div class="nav-item" data-target="daily-work-section" style="background: rgba(212, 175, 55, 0.1); border-right: 4px solid var(--accent-gold);">📅 جلسة عمل اليومية</div>
+      <div class="nav-item" data-target="potential-clients-section">📅 دفتر المواعيد</div>
       <div class="nav-item" data-target="case-management-section">📂 إدارة القضايا</div>
       <div class="nav-item" data-target="clients-management-section">👤 الموكلين</div>
       <div class="nav-item" data-target="agencies-management-section">📜 الوكالات</div>
@@ -811,9 +878,10 @@
       <div class="nav-item" data-target="referral-cases-section">🔃 قضايا الإحالة</div>
       <div class="nav-item" data-target="sessions-management-section">📅 الجلسات القادمة</div>
       <div class="nav-item" data-target="execution-management-section">⚖️ التنفيذ</div>
+      <div class="nav-item" data-target="separated-cases-section">📜 القضايا المفصولة</div>
       <div class="nav-item" data-target="messages-management-section">💬 رسائل الموكلين</div>
+      <div class="nav-item" data-target="fees-management-section">💰 الأتعاب</div>
       <div class="nav-item">📑 دراسة الدعوى</div>
-      <div class="nav-item">💰 الأتعاب</div>
       <div class="nav-item">🔔 آخر الأخبار والتحديثات</div>
       <div class="nav-item">📝 سجل النشاطات</div>
       <div class="nav-item">🛡️ المسؤول</div>
@@ -875,6 +943,96 @@
         </div>
       </section>
 
+      <!-- قسم جلسة عمل اليومية (Daily Work Session) -->
+      <section id="daily-work-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0; display:flex; justify-content:space-between; align-items:center;">
+          📅 جلسة عمل اليومية
+          <span id="current-date-display" style="font-size: 1rem; color: var(--accent-gold);"></span>
+        </h2>
+        
+        <!-- جلسات المحاكم اليوم -->
+        <div style="margin-top: 30px;">
+          <h3 style="color:var(--accent-gold); border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">⚖️ جلسات المحاكم اليوم</h3>
+          <table class="data-table">
+            <thead>
+              <tr><th>الموكل / القضية</th><th>المكان</th><th>الملاحظات</th></tr>
+            </thead>
+            <tbody id="today-court-sessions-body"></tbody>
+          </table>
+        </div>
+
+        <!-- تذكيرات المتابعة القانونية -->
+        <div style="margin-top: 40px;">
+          <h3 style="color:var(--accent-blue); border-bottom:1px solid rgba(59, 130, 246, 0.2); padding-bottom:5px;">🔔 تذكيرات المتابعة القانونية (اليوم)</h3>
+          <table class="data-table">
+            <thead>
+              <tr><th>النوع</th><th>الموكل</th><th>رقم الأساس</th><th>الإجراء المطلوب</th></tr>
+            </thead>
+            <tbody id="today-reminders-body"></tbody>
+          </table>
+        </div>
+
+        <!-- قائمة العمل الإداري -->
+        <div style="margin-top: 40px;">
+          <h3 style="color:var(--accent-green); border-bottom:1px solid rgba(16, 185, 129, 0.2); padding-bottom:5px;">📝 قائمة العمل الإداري</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="new-admin-task" placeholder="أدخل مهمة إدارية جديدة..." style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; border-radius: 12px; padding: 10px;">
+            <button class="action-btn" style="background:var(--accent-green)" onclick="addAdminTask()">إضافة مهمة ✅</button>
+          </div>
+          <div id="admin-tasks-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+            <!-- المربعات ستظهر هنا -->
+          </div>
+        </div>
+      </section>
+
+      <!-- قسم الموكل المحتمل (Potential Clients) -->
+      <section id="potential-clients-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">دفتر المواعيد والمراجعات</h2>
+        <form class="case-form" id="potential-client-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>اسم الموكل المحتمل</label>
+              <input type="text" id="pot-name" placeholder="الاسم الثلاثي" required>
+            </div>
+            <div class="form-group">
+              <label>رقم الهاتف / الواتساب</label>
+              <input type="tel" id="pot-phone" placeholder="09xxxxxxxx" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>تاريخ الموعد</label>
+              <input type="date" id="pot-date" required>
+            </div>
+            <div class="form-group">
+              <label>الوقت</label>
+              <input type="time" id="pot-time">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>ملاحظات الاستشارة / موضوع المراجعة</label>
+            <textarea id="pot-notes" rows="2" placeholder="اكتب هنا موضوع الاستشارة أو أي ملاحظات أولية..."></textarea>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="savePotentialClient()">حفظ الموعد ✅</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <h3>سجل المواعيد القادمة</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل المحتمل</th>
+                <th>رقم الهاتف</th>
+                <th>الموعد</th>
+                <th>الملاحظات</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="potential-clients-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- قسم إدارة القضايا (Case Management) -->
       <section id="case-management-section" class="panel-section" style="display: none;">
         <h2 style="margin-top: 0;">إدارة القضايا</h2>
@@ -902,10 +1060,41 @@
             </div>
             <div class="form-group">
               <label for="case-type">نوع الدعوى</label>
-              <input type="text" id="case-type" name="case-type" placeholder="مثال: مدني - عقاري" required>
+              <select id="case-type" name="case-type" onchange="toggleCaseTypeFields()" required>
+                <option value="" disabled selected>اختر النوع</option>
+                <option value="مدني">مدني</option>
+                <option value="شرعي">شرعي</option>
+                <option value="جزائي">جزائي</option>
+                <option value="إداري">إداري</option>
+                <option value="عقاري">عقاري</option>
+              </select>
             </div>
           </div>
-          <div class="form-group full-width">
+
+          <!-- خيارات إضافية للقضايا المدنية والعقارية -->
+          <div class="form-row" id="notation-trigger-row" style="display: none; align-items: center; background: rgba(212, 175, 55, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2);">
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+              <input type="checkbox" id="has-notation" onchange="toggleNotationFields()" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="has-notation" style="margin: 0; cursor: pointer; color: #fff;">وضع إشارة الدعوى</label>
+            </div>
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+              <input type="checkbox" id="has-tax" onchange="toggleTaxFields()" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="has-tax" style="margin: 0; cursor: pointer; color: #fff;">ضريبة المالية</label>
+            </div>
+          </div>
+
+          <div id="notation-fields" class="form-row" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            <div class="form-group"><label>رقم الإشارة</label><input type="text" id="notation-num" placeholder="رقم الإشارة"></div>
+            <div class="form-group"><label>رقم العقار</label><input type="text" id="property-num" placeholder="رقم المحضر/العقار"></div>
+            <div class="form-group"><label>لصالح من</label><input type="text" id="in-favor-of" placeholder="الجهة المستفيدة"></div>
+            <div class="form-group"><label>على حصة من</label><input type="text" id="against-share-of" placeholder="الجهة المطلوب التنفيذ عليها"></div>
+          </div>
+
+          <div id="tax-fields" class="form-row" style="display: none;">
+            <div class="form-group"><label>رقم الضريبة</label><input type="text" id="tax-num" placeholder="أدخل رقم الضريبة المالية"></div>
+          </div>
+
+          <div class="form-group full-width" style="margin-top: 10px;">
             <label for="case-subject">موضوع الدعوى</label>
             <textarea id="case-subject" name="case-subject" rows="3" placeholder="وصف موجز لموضوع الدعوى" required></textarea>
           </div>
@@ -1025,6 +1214,10 @@
               </div>
             </div>
           </div>
+          <div class="form-group full-width" style="margin-top: 10px;">
+            <label for="c-notes">ملاحظات خاصة للمحامي (لا تظهر للموكل)</label>
+            <textarea id="c-notes" rows="3" placeholder="أدخل هنا ملاحظاتك السرية حول الموكل أو تفاصيل إضافية تهمك في العمل..."></textarea>
+          </div>
           <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button type="button" class="action-btn" onclick="addClient()">إضافة موكل</button>
             <button type="button" class="action-btn" style="background: #64748b;" onclick="resetClientForm()">تفريغ الخانات</button>
@@ -1034,6 +1227,10 @@
         <div style="margin-top: 40px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
             <h3 style="margin:0">قائمة الموكلين المسجلين</h3>
+            <div style="display: flex; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border);">
+              <button id="view-active-clients" class="action-btn" style="background: var(--accent-gold); color: #000;" onclick="setClientViewMode('active')">الموكلون النشطون</button>
+              <button id="view-archived-clients" class="action-btn" style="background: transparent; color: var(--gray-silver);" onclick="setClientViewMode('archived')">الأرشيف 📁</button>
+            </div>
             <input type="text" id="client-search" placeholder="بحث سريع عن موكل (الاسم، الهاتف، المستخدم)..." oninput="updateClientsTable()" 
                    style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
             <div style="display:flex; gap:10px;">
@@ -1228,6 +1425,10 @@
             <div class="form-group"><label>مكان تنظيم الضبط</label><input type="text" id="inv-rec-place"></div>
             <div class="form-group"><label>رقم وارد النيابة العامة</label><input type="text" id="inv-pros-num"></div>
           </div>
+          <div class="form-row" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div class="form-group"><label style="color:var(--accent-blue)">🔔 ذكرني بتاريخ</label><input type="date" id="inv-remind-date"></div>
+            <div class="form-group"><label style="color:var(--accent-blue)">📝 الإجراء المطلوب</label><input type="text" id="inv-remind-action" placeholder="مثلاً: تقديم طلب إخلاء سبيل"></div>
+          </div>
           <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button type="button" class="action-btn" onclick="saveInvestigationCase()">إضافة قضية تحقيق</button>
             <button type="button" class="action-btn" style="background: #64748b;" onclick="resetInvestigationForm()">تفريغ الخانات</button>
@@ -1248,6 +1449,7 @@
                 <th>الأساس/العام</th>
                 <th>الجرم</th>
                 <th>الدائرة</th>
+                <th>المتابعة</th>
                 <th>إجراء</th>
               </tr>
             </thead>
@@ -1316,6 +1518,10 @@
             <div class="form-group"><label>الجرم</label><input type="text" id="ref-crime" placeholder="نوع الجرم"></div>
             <div class="form-group"><label>موضوع الجرم</label><input type="text" id="ref-subject" placeholder="تفاصيل الجرم"></div>
           </div>
+          <div class="form-row" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div class="form-group"><label style="color:var(--accent-blue)">🔔 ذكرني بتاريخ</label><input type="date" id="ref-remind-date"></div>
+            <div class="form-group"><label style="color:var(--accent-blue)">📝 الإجراء المطلوب</label><input type="text" id="ref-remind-action" placeholder="مثلاً: مراجعة قاضي الإحالة"></div>
+          </div>
           <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button type="button" class="action-btn" onclick="saveReferralCase()">إضافة قضية إحالة</button>
             <button type="button" class="action-btn" style="background: #64748b;" onclick="resetReferralForm()">تفريغ الخانات</button>
@@ -1335,6 +1541,7 @@
                 <th>الخصم</th>
                 <th>الأساس/العام</th>
                 <th>الجرم</th>
+                <th>المتابعة</th>
                 <th>إجراء</th>
               </tr>
             </thead>
@@ -1461,6 +1668,10 @@
             <label>ملاحظات</label>
             <textarea id="exe-notes" rows="3" placeholder="ملاحظات إضافية حول ملف التنفيذ"></textarea>
           </div>
+          <div class="form-row" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div class="form-group"><label style="color:var(--accent-blue)">🔔 ذكرني بتاريخ</label><input type="date" id="exe-remind-date"></div>
+            <div class="form-group"><label style="color:var(--accent-blue)">📝 الإجراء المطلوب</label><input type="text" id="exe-remind-action" placeholder="مثلاً: مراجعة مأمور التنفيذ للتبليغ"></div>
+          </div>
           <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button type="button" class="action-btn" onclick="saveExecutionCase()">حفظ ملف التنفيذ</button>
             <button type="button" class="action-btn" style="background: #64748b;" onclick="resetExecutionForm()">تفريغ الخانات</button>
@@ -1492,6 +1703,150 @@
           </table>
         </div>
       </section>
+
+      <!-- قسم إدارة الأتعاب (Fees Management) -->
+      <section id="fees-management-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">إدارة الأتعاب المالية</h2>
+
+        <!-- تقرير مالي شامل -->
+        <div class="stat-row" style="margin-bottom: 30px;">
+          <div class="stat-card"><small>إجمالي الأتعاب المتفق عليها</small><span class="number" id="global-total-agreed">0</span></div>
+          <div class="stat-card"><small>إجمالي المبالغ المحصلة</small><span class="number" id="global-total-paid" style="color:var(--accent-green)">0</span></div>
+          <div class="stat-card"><small>إجمالي المبالغ المتبقية</small><span class="number" id="global-total-remaining" style="color:#ef4444">0</span></div>
+          <div class="stat-card"><small>عدد الدفعات المسجلة</small><span class="number" id="global-payments-count">0</span></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+          <button class="action-btn" style="background:#16a34a" onclick="exportFeesToExcel()">تصدير التقرير المالي (Excel) 📊</button>
+        </div>
+
+        <form class="case-form" id="fee-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>الموكل</label>
+              <input type="text" id="fee-client-name" list="clients-datalist" placeholder="اختر الموكل..." required onchange="handleFeeClientChange()">
+            </div>
+            <div class="form-group">
+              <label>إجمالي الأتعاب المتفق عليها</label>
+              <input type="number" id="fee-total-agreed" placeholder="مثلاً: 1000000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>تسجيل دفعة جديدة (المبلغ)</label>
+              <input type="number" id="fee-payment-amount" placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>تاريخ التسديد</label>
+              <input type="date" id="fee-payment-date">
+            </div>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 10px;" onclick="saveFeePayment()">حفظ التعديلات والدفعات ✅</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <h3 id="fee-table-title">سجل دفعات الموكل</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل</th>
+                <th>التاريخ</th>
+                <th>المبلغ المسدد</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="payments-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- قسم القضايا المفصولة (Separated Cases) -->
+      <section id="separated-cases-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">أرشيف القضايا المفصولة (الصادر بها قرار)</h2>
+        <form class="case-form" id="separated-case-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>الموكل</label>
+              <input type="text" id="sep-client" list="clients-datalist" placeholder="اختر الموكل..." required>
+            </div>
+            <div class="form-group">
+              <label>الخصم</label>
+              <input type="text" id="sep-opponent" placeholder="اسم الخصم">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>رقم القرار</label>
+              <input type="text" id="sep-decision-num" placeholder="رقم القرار الصادر" required>
+            </div>
+            <div class="form-group">
+              <label>رقم الأساس</label>
+              <input type="text" id="sep-base" placeholder="رقم الأساس الأصلي" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>المحكمة المصدرة للقرار</label>
+              <input type="text" id="sep-court" placeholder="اسم المحكمة التي أصدرت الحكم">
+            </div>
+            <div class="form-group">
+              <label>النتيجة / المنطوق</label>
+              <textarea id="sep-result" rows="2" placeholder="ما هي نتيجة القرار؟ (مثلاً: تثبيت بيع، رد دعوى...)"></textarea>
+            </div>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="saveSeparatedCase()">حفظ القرار في الأرشيف ✅</button>
+        </form>
+
+        <div style="margin-top: 40px;">
+          <h3 style="margin-bottom: 15px;">سجل القرارات المكتسبة</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الموكل / الخصم</th>
+                <th>رقم القرار / الأساس</th>
+                <th>المحكمة</th>
+                <th>النتيجة</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="separated-cases-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- نافذة عرض ملف الموكل الشامل للأستاذ محمد -->
+      <div id="client-profile-modal" class="modal" onclick="closeClientProfileModal()">
+        <div class="modal-content" style="background: #0f172a; width: 95%; max-width: 1000px; padding: 30px; overflow-y: auto; max-height: 90vh; cursor: default; border: 2px solid var(--accent-gold);" onclick="event.stopPropagation()">
+          <span class="close-modal" onclick="closeClientProfileModal()">&times;</span>
+          <h2 id="p-client-name" style="color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 15px; margin-top: 0; text-align: center;">ملف الموكل الشامل</h2>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+            <div class="panel-section" style="padding: 20px; border-radius: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                <h3 style="margin-top:0; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:10px; color: var(--accent-gold);">👤 البيانات الشخصية</h3>
+                <div id="p-client-info"></div>
+            </div>
+            <div class="panel-section" style="padding: 20px; border-radius: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                <h3 style="margin-top:0; border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:10px; color: var(--accent-gold);">💰 الحالة المالية</h3>
+                <div id="p-client-finance"></div>
+            </div>
+          </div>
+
+          <div class="panel-section" style="margin-top: 25px; padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
+              <h3 style="margin-top:0; color: var(--accent-gold);">📂 القضايا والدعاوى المرتبطة</h3>
+              <div id="p-client-cases" style="overflow-x: auto;"></div>
+          </div>
+
+          <div class="panel-section" style="margin-top: 25px; padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
+              <h3 style="margin-top:0; color: var(--accent-gold);">📜 الوكالات القانونية</h3>
+              <div id="p-client-agencies" style="overflow-x: auto;"></div>
+          </div>
+
+          <div class="panel-section" style="margin-top: 25px; padding: 20px; border-radius: 15px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
+              <h3 style="margin-top:0; color: #ef4444;">🔒 ملاحظات المحامي الخاصة (سرية)</h3>
+              <div id="p-client-private-notes" style="color: #fff; line-height: 1.6; white-space: pre-wrap; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;"></div>
+          </div>
+        </div>
+      </div>
 
       <!-- قسم رسائل الموكلين (Client Messages) -->
       <section id="messages-management-section" class="panel-section" style="display: none;">

@@ -14,10 +14,15 @@ window.allReferrals = [];
 window.allExecutions = [];
 window.allSessions = [];
 window.allMessages = [];
+window.allPayments = [];
+window.allAdminTasks = [];
+window.allPotentialClients = [];
+window.allSeparatedCases = [];
 window.allAgencies = [];
 window.allGeneralCases = [];
 window.editingId = null;
 window.currentClient = null;
+window.clientViewMode = 'active'; // 'active' or 'archived'
 
 // Eye icons for password visibility toggle
 const eyeIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
@@ -53,6 +58,7 @@ function setupFirebaseListeners() {
     window.allClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateClientsTable();
     window.populateClientsDatalist();
+    updateGlobalFeesSummary();
   });
   onSnapshot(collection(db, "messages"), (snap) => {
     window.allMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -62,30 +68,54 @@ function setupFirebaseListeners() {
     window.allSessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshDashboardData();
     updateSessionsTable(); // Ensure sessions table is updated
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
   onSnapshot(collection(db, "investigations"), (snap) => {
     window.allInvestigations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshDashboardData();
     updateInvestigationTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
   onSnapshot(collection(db, "referrals"), (snap) => {
     window.allReferrals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshDashboardData();
     updateReferralTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
   onSnapshot(collection(db, "executions"), (snap) => {
     window.allExecutions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshDashboardData();
     updateExecutionTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
   onSnapshot(collection(db, "agencies"), (snap) => {
     window.allAgencies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateAgenciesTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
   onSnapshot(collection(db, "generalCases"), (snap) => {
     window.allGeneralCases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     refreshDashboardData();
     updateGeneralCasesTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
+  });
+  onSnapshot(collection(db, "payments"), (snap) => {
+    window.allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if(window.currentClient) loadClientPortalData(window.currentClient);
+    updateGlobalFeesSummary();
+  });
+  onSnapshot(collection(db, "adminTasks"), (snap) => {
+    window.allAdminTasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateAdminTasksUI();
+  });
+  onSnapshot(collection(db, "potentialClients"), (snap) => {
+    window.allPotentialClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updatePotentialClientsTable();
+  });
+  onSnapshot(collection(db, "separatedCases"), (snap) => {
+    window.allSeparatedCases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateSeparatedCasesTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
   });
 }
 
@@ -142,6 +172,7 @@ window.addClient = async function() {
     const whatsapp = document.getElementById('c-whatsapp').value.trim();
     const username = document.getElementById('c-username').value.trim();
     const password = document.getElementById('c-password').value.trim();
+    const privateNotes = document.getElementById('c-notes').value.trim();
 
     if (!fullname || !username || !password) {
       alert("يرجى ملء الخانات الإلزامية (الاسم، اسم المستخدم، كلمة المرور).");
@@ -156,6 +187,7 @@ window.addClient = async function() {
       whatsapp, 
       username, 
       password,
+      privateNotes,
       updatedAt: Date.now()
     };
 
@@ -185,11 +217,12 @@ window.updateClientsTable = function() {
     normalizeArabic(c.username).toLowerCase().includes(searchTerm)
   ).forEach(client => {
     tbody.innerHTML += `<tr>
-      <td>${client.fullname}</td>
+      <td><a href="#" style="color:var(--accent-gold); font-weight:bold; text-decoration:none;" onclick="viewClientProfile('${client.id}'); return false;">${client.fullname}</a></td>
       <td>${client.address || '-'}</td>
       <td>${client.phone || '-'}</td>
       <td>${client.username}</td>
       <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewClientProfile('${client.id}')">الملف 👁️</button>
         <button class="action-btn" style="background: var(--accent-blue);" onclick="editClient('${client.id}')">تعديل</button>
         <button class="action-btn" style="background: #ef4444;" onclick="deleteClient('${client.id}')">حذف</button>
       </td>
@@ -208,6 +241,7 @@ window.editClient = function(id) {
   document.getElementById('c-whatsapp').value = client.whatsapp || '';
   document.getElementById('c-username').value = client.username;
   document.getElementById('c-password').value = client.password; // Note: In a real app, passwords should not be re-populated
+  document.getElementById('c-notes').value = client.privateNotes || '';
   document.querySelector('#client-form .action-btn').textContent = "تحديث البيانات 💾";
   document.getElementById('client-form').scrollIntoView({ behavior: 'smooth' });
 };
@@ -368,8 +402,11 @@ window.resetAgencyForm = function() {
 
 // Investigation Cases functions
 window.saveInvestigationCase = async function() {
+  const clientName = document.getElementById('inv-client').value.trim();
+  const clientObj = window.allClients.find(c => c.fullname === clientName);
   const caseData = {
-    client: document.getElementById('inv-client').value.trim(),
+    client: clientName,
+    clientId: clientObj ? clientObj.id : null,
     clientRole: document.getElementById('inv-client-role').value,
     clientStatus: document.getElementById('inv-client-status').value,
     opponent: document.getElementById('inv-opponent').value.trim(),
@@ -385,6 +422,8 @@ window.saveInvestigationCase = async function() {
     recDate: document.getElementById('inv-rec-date').value,
     recPlace: document.getElementById('inv-rec-place').value.trim(),
     prosNum: document.getElementById('inv-pros-num').value.trim(),
+    remindDate: document.getElementById('inv-remind-date').value,
+    remindAction: document.getElementById('inv-remind-action').value.trim(),
     updatedAt: Date.now()
   };
   if (!caseData.client || !caseData.base || !caseData.year) {
@@ -418,6 +457,7 @@ window.updateInvestigationTable = function() {
       <td>${c.base}/${c.year}</td>
       <td>${c.crime}</td>
       <td>${c.dept} / ${c.city}</td>
+      <td style="font-size:0.8rem; color:var(--accent-blue)">${c.remindDate ? `📅 ${c.remindDate}<br>` : ''}${c.remindAction || ''}</td>
       <td>
         <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('investigation', '${c.id}')">طباعة وصل</button>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editInvestigationCase('${c.id}')">تعديل</button>
@@ -447,6 +487,8 @@ window.editInvestigationCase = function(id) {
   document.getElementById('inv-rec-date').value = c.recDate;
   document.getElementById('inv-rec-place').value = c.recPlace;
   document.getElementById('inv-pros-num').value = c.prosNum;
+  document.getElementById('inv-remind-date').value = c.remindDate || '';
+  document.getElementById('inv-remind-action').value = c.remindAction || '';
   document.querySelector('#investigation-form .action-btn').textContent = "تحديث قضية التحقيق";
   document.getElementById('investigation-form').scrollIntoView({ behavior: 'smooth' });
 };
@@ -466,8 +508,11 @@ window.resetInvestigationForm = function() {
 
 // Referral Cases functions
 window.saveReferralCase = async function() {
+  const clientName = document.getElementById('ref-client').value.trim();
+  const clientObj = window.allClients.find(c => c.fullname === clientName);
   const caseData = {
-    client: document.getElementById('ref-client').value.trim(),
+    client: clientName,
+    clientId: clientObj ? clientObj.id : null,
     clientRole: document.getElementById('ref-client-role').value,
     clientStatus: document.getElementById('ref-client-status').value,
     opponent: document.getElementById('ref-opponent').value.trim(),
@@ -479,6 +524,8 @@ window.saveReferralCase = async function() {
     city: document.getElementById('ref-city').value.trim(),
     crime: document.getElementById('ref-crime').value.trim(),
     subject: document.getElementById('ref-subject').value.trim(),
+    remindDate: document.getElementById('ref-remind-date').value,
+    remindAction: document.getElementById('ref-remind-action').value.trim(),
     updatedAt: Date.now()
   };
   if (!caseData.client || !caseData.base || !caseData.year) {
@@ -511,6 +558,7 @@ window.updateReferralTable = function() {
       <td>${c.opponent || '-'}</td>
       <td>${c.base}/${c.year}</td>
       <td>${c.crime}</td>
+      <td style="font-size:0.8rem; color:var(--accent-blue)">${c.remindDate ? `📅 ${c.remindDate}<br>` : ''}${c.remindAction || ''}</td>
       <td>
         <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('referral', '${c.id}')">طباعة وصل</button>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editReferralCase('${c.id}')">تعديل</button>
@@ -536,6 +584,8 @@ window.editReferralCase = function(id) {
   document.getElementById('ref-city').value = c.city;
   document.getElementById('ref-crime').value = c.crime;
   document.getElementById('ref-subject').value = c.subject;
+  document.getElementById('ref-remind-date').value = c.remindDate || '';
+  document.getElementById('ref-remind-action').value = c.remindAction || '';
   document.querySelector('#referral-form .action-btn').textContent = "تحديث قضية الإحالة";
   document.getElementById('referral-form').scrollIntoView({ behavior: 'smooth' });
 };
@@ -555,8 +605,11 @@ window.resetReferralForm = function() {
 
 // Execution Management functions
 window.saveExecutionCase = async function() {
+  const clientName = document.getElementById('exe-client').value.trim();
+  const clientObj = window.allClients.find(c => c.fullname === clientName);
   const caseData = {
-    client: document.getElementById('exe-client').value.trim(),
+    client: clientName,
+    clientId: clientObj ? clientObj.id : null,
     clientRole: document.getElementById('exe-client-role').value,
     base: document.getElementById('exe-base').value.trim(),
     year: document.getElementById('exe-year').value.trim(),
@@ -566,6 +619,8 @@ window.saveExecutionCase = async function() {
     actionTaken: document.getElementById('exe-action-taken').value.trim(),
     actionNext: document.getElementById('exe-action-next').value.trim(),
     notes: document.getElementById('exe-notes').value.trim(),
+    remindDate: document.getElementById('exe-remind-date').value,
+    remindAction: document.getElementById('exe-remind-action').value.trim(),
     updatedAt: Date.now()
   };
   if (!caseData.client || !caseData.base || !caseData.year) {
@@ -598,7 +653,7 @@ window.updateExecutionTable = function() {
       <td>${c.base}/${c.year}</td>
       <td><span class="status-badge status-active">${c.type}</span></td>
       <td>${c.opponent}</td>
-      <td style="color:var(--accent-blue)">${c.actionNext || '-'}</td>
+      <td style="color:var(--accent-blue); font-size:0.85rem;">${c.remindDate ? `📅 ${c.remindDate}<br>` : ''}${c.remindAction || c.actionNext || '-'}</td>
       <td>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editExecutionCase('${c.id}')">تعديل</button>
         <button class="action-btn" style="background: #ef4444;" onclick="deleteExecutionCase('${c.id}')">حذف</button>
@@ -621,6 +676,8 @@ window.editExecutionCase = function(id) {
   document.getElementById('exe-action-taken').value = c.actionTaken;
   document.getElementById('exe-action-next').value = c.actionNext;
   document.getElementById('exe-notes').value = c.notes;
+  document.getElementById('exe-remind-date').value = c.remindDate || '';
+  document.getElementById('exe-remind-action').value = c.remindAction || '';
   document.querySelector('#execution-form .action-btn').textContent = "تحديث ملف التنفيذ";
   document.getElementById('execution-form').scrollIntoView({ behavior: 'smooth' });
 };
@@ -784,9 +841,189 @@ window.resetSessionForm = function() {
   document.querySelector('#session-form .action-btn').textContent = "حفظ وجدولة الجلسة";
 };
 
+// وظائف جلسة عمل اليومية
+window.refreshDailyWorkData = function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // 1. جلسات المحاكم اليوم
+  const sessBody = document.getElementById('today-court-sessions-body');
+  if(sessBody) {
+    sessBody.innerHTML = '';
+    const todaySessions = window.allSessions.filter(s => s.date === today);
+    if(todaySessions.length === 0) sessBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--gray-silver)">لا توجد جلسات مجدولة لهذا اليوم.</td></tr>';
+    todaySessions.forEach(s => {
+      sessBody.innerHTML += `<tr><td style="color:var(--accent-gold); font-weight:600;">${s.caseRef}</td><td>${s.court}</td><td>${s.notes || '-'}</td></tr>`;
+    });
+  }
+
+  // 2. تذكيرات المتابعة (تحقيق، إحالة، تنفيذ)
+  const remBody = document.getElementById('today-reminders-body');
+  if(remBody) {
+    remBody.innerHTML = '';
+    const invs = window.allInvestigations.filter(c => c.remindDate === today).map(c => ({...c, typeLabel: 'تحقيق'}));
+    const refs = window.allReferrals.filter(c => c.remindDate === today).map(c => ({...c, typeLabel: 'إحالة'}));
+    const exes = window.allExecutions.filter(c => c.remindDate === today).map(c => ({...c, typeLabel: 'تنفيذ', base: `${c.base}/${c.year}`}));
+    
+    const allReminders = [...invs, ...refs, ...exes];
+    if(allReminders.length === 0) remBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--gray-silver)">لا توجد تذكيرات متابعة لليوم.</td></tr>';
+    allReminders.forEach(c => {
+      remBody.innerHTML += `<tr>
+        <td><span class="status-badge status-active">${c.typeLabel}</span></td>
+        <td style="font-weight:600;">${c.client}</td>
+        <td>${c.base || ''}</td>
+        <td style="color:var(--accent-blue)">${c.remindAction || '-'}</td>
+      </tr>`;
+    });
+  }
+};
+
+window.updateAdminTasksUI = function() {
+  const container = document.getElementById('admin-tasks-container');
+  if (!container) return;
+  container.innerHTML = '';
+  // ترتيب: غير المكتمل أولاً ثم المكتمل، ثم الأحدث للأقدم
+  window.allAdminTasks.sort((a,b) => (a.completed === b.completed) ? (b.timestamp - a.timestamp) : (a.completed ? 1 : -1)).forEach(task => {
+    container.innerHTML += `
+      <div class="admin-task-square ${task.completed ? 'completed' : ''}">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <input type="checkbox" class="admin-task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleAdminTask('${task.id}', this.checked)">
+          <span style="font-weight:500; font-size:0.95rem;">${task.text}</span>
+        </div>
+        <div style="text-align:left; margin-top:10px;">
+          <button onclick="deleteAdminTask('${task.id}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:0.8rem;">حذف 🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+};
+
+window.addAdminTask = async function() {
+  const input = document.getElementById('new-admin-task');
+  const text = input.value.trim();
+  if (!text) return;
+  await addDoc(collection(db, "adminTasks"), {
+    text,
+    completed: false,
+    timestamp: Date.now()
+  });
+  input.value = '';
+};
+
+window.toggleAdminTask = async function(id, status) {
+  await updateDoc(doc(db, "adminTasks", id), { completed: status });
+};
+
+window.deleteAdminTask = async function(id) {
+  if (confirm("حذف هذه المهمة الإدارية؟")) await deleteDoc(doc(db, "adminTasks", id));
+};
+
+// وظائف الموكل المحتمل
+window.savePotentialClient = async function() {
+  const potData = {
+    name: document.getElementById('pot-name').value.trim(),
+    phone: document.getElementById('pot-phone').value.trim(),
+    date: document.getElementById('pot-date').value,
+    time: document.getElementById('pot-time').value,
+    notes: document.getElementById('pot-notes').value.trim(),
+    timestamp: Date.now()
+  };
+
+  if (!potData.name || !potData.date || !potData.phone) return alert("يرجى إكمال البيانات الأساسية (الاسم، الهاتف، التاريخ)");
+
+  try {
+    if (window.editingId) {
+      await updateDoc(doc(db, "potentialClients", window.editingId), potData);
+      alert("تم تحديث الموعد بنجاح!");
+    } else {
+      await addDoc(collection(db, "potentialClients"), potData);
+      alert("تم حفظ الموعد في دفتر المواعيد بنجاح!");
+    }
+    resetPotentialClientForm();
+  } catch (e) { alert("خطأ في الحفظ"); }
+};
+
+window.updatePotentialClientsTable = function() {
+  const tbody = document.getElementById('potential-clients-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  window.allPotentialClients.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td style="color:var(--accent-gold); font-weight:bold;">${c.name}</td>
+      <td>${c.phone}</td>
+      <td>${c.date} ${c.time ? `| ${c.time}` : ''}</td>
+      <td style="font-size:0.85rem; color:var(--gray-silver)">${c.notes || '-'}</td>
+      <td>
+        <button class="action-btn" style="background:#25D366" onclick="sendAppointmentWhatsApp('${c.id}')">تأكيد الموعد 📱</button>
+        <button class="action-btn" style="background:var(--accent-blue); margin-right:5px;" onclick="editPotentialClient('${c.id}')">تعديل</button>
+        <button class="action-btn" style="background:#ef4444; margin-right:5px;" onclick="deletePotentialClient('${c.id}')">حذف</button>
+      </td>
+    </tr>`;
+  });
+};
+
+window.sendAppointmentWhatsApp = function(id) {
+  const c = window.allPotentialClients.find(item => item.id === id);
+  if (!c || !c.phone) return alert("لا يوجد رقم هاتف لهذا الموكل.");
+
+  let phone = c.phone.replace(/\D/g, '');
+  if (phone.startsWith('09')) phone = '963' + phone.substring(1);
+
+  let msg = `*مكتب المحامي محمد النزال*\n\nالسيد/ة *${c.name}* المحترم/ة،\nنحيطكم علماً بأنه تم تأكيد موعد استشارتكم القانونية يوم *${c.date}* في تمام الساعة *${c.time || 'غير محدد'}*.\n\nيرجى الحضور في الموعد المحدد. نقدر ثقتكم.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.editPotentialClient = function(id) {
+  const c = window.allPotentialClients.find(item => item.id === id);
+  if (!c) return;
+  window.editingId = id;
+  document.getElementById('pot-name').value = c.name;
+  document.getElementById('pot-phone').value = c.phone;
+  document.getElementById('pot-date').value = c.date;
+  document.getElementById('pot-time').value = c.time || '';
+  document.getElementById('pot-notes').value = c.notes || '';
+  document.querySelector('#potential-client-form .action-btn').textContent = "تحديث الموعد 💾";
+  document.getElementById('potential-client-form').scrollIntoView({behavior:'smooth'});
+};
+
+window.deletePotentialClient = async function(id) {
+  if (confirm("هل تريد حذف هذا الموعد؟")) {
+    await deleteDoc(doc(db, "potentialClients", id));
+  }
+};
+
+window.resetPotentialClientForm = function() {
+  window.editingId = null;
+  document.getElementById('potential-client-form').reset();
+  document.querySelector('#potential-client-form .action-btn').textContent = "حفظ الموعد ✅";
+};
+
+// وظائف التحكم في حقول القضايا المدنية والعقارية
+window.toggleCaseTypeFields = function() {
+  const type = document.getElementById('case-type').value;
+  const row = document.getElementById('notation-trigger-row');
+  if (type === 'مدني' || type === 'عقاري') {
+    row.style.display = 'flex';
+  } else {
+    row.style.display = 'none';
+    document.getElementById('notation-fields').style.display = 'none';
+    document.getElementById('tax-fields').style.display = 'none';
+  }
+};
+
+window.toggleNotationFields = function() {
+  document.getElementById('notation-fields').style.display = document.getElementById('has-notation').checked ? 'grid' : 'none';
+};
+
+window.toggleTaxFields = function() {
+  document.getElementById('tax-fields').style.display = document.getElementById('has-tax').checked ? 'grid' : 'none';
+};
+
 // General Case Management functions
 window.saveGeneralCase = async function() {
   try {
+    const clientName = document.getElementById('client-full-name').value.trim();
+    const clientObj = window.allClients.find(c => c.fullname === clientName);
     const caseData = {
       court: document.getElementById('court').value.trim(),
       base: document.getElementById('case-number').value.trim(),
@@ -796,11 +1033,19 @@ window.saveGeneralCase = async function() {
       subject: document.getElementById('case-subject').value.trim(),
       opponent: document.getElementById('opponent').value.trim(),
       opponentRole: document.getElementById('opponent-role').value,
-      client: document.getElementById('client-full-name').value.trim(),
+      client: clientName,
+      clientId: clientObj ? clientObj.id : null,
       clientRole: document.getElementById('client-role').value,
       firstSession: document.getElementById('first-session-date').value,
       clientStatus: 'نشطة',
       typeLabel: 'عامة',
+      hasNotation: document.getElementById('has-notation').checked,
+      notationNum: document.getElementById('notation-num').value.trim(),
+      propertyNum: document.getElementById('property-num').value.trim(),
+      inFavorOf: document.getElementById('in-favor-of').value.trim(),
+      againstShareOf: document.getElementById('against-share-of').value.trim(),
+      hasTax: document.getElementById('has-tax').checked,
+      taxNum: document.getElementById('tax-num').value.trim(),
       updatedAt: Date.now()
     };
 
@@ -863,7 +1108,20 @@ window.editGeneralCase = function(id) {
   document.getElementById('client-full-name').value = c.client;
   document.getElementById('client-role').value = c.clientRole;
   document.getElementById('first-session-date').value = c.firstSession;
-  
+
+  // تحميل الحقول المدنية/العقارية
+  document.getElementById('has-notation').checked = c.hasNotation || false;
+  document.getElementById('notation-num').value = c.notationNum || '';
+  document.getElementById('property-num').value = c.propertyNum || '';
+  document.getElementById('in-favor-of').value = c.inFavorOf || '';
+  document.getElementById('against-share-of').value = c.againstShareOf || '';
+  document.getElementById('has-tax').checked = c.hasTax || false;
+  document.getElementById('tax-num').value = c.taxNum || '';
+
+  toggleCaseTypeFields();
+  toggleNotationFields();
+  toggleTaxFields();
+
   document.querySelector('#case-management-section .action-btn').textContent = "تحديث بيانات القضية 💾";
   document.getElementById('case-management-section').scrollIntoView({ behavior: 'smooth' });
 };
@@ -883,7 +1141,299 @@ window.resetGeneralCaseForm = function() {
   window.editingId = null;
   const form = document.querySelector('#case-management-section form');
   if (form) form.reset();
+  document.getElementById('notation-trigger-row').style.display = 'none';
+  document.getElementById('notation-fields').style.display = 'none';
+  document.getElementById('tax-fields').style.display = 'none';
   document.querySelector('#case-management-section .action-btn').textContent = "حفظ القضية";
+};
+
+// Fees & Payments Management functions
+window.handleFeeClientChange = function() {
+  const name = document.getElementById('fee-client-name').value.trim();
+  const client = window.allClients.find(c => c.fullname === name);
+  if (client) {
+    document.getElementById('fee-total-agreed').value = client.agreedFee || 0;
+    updateFeesTable(name);
+  } else {
+    document.getElementById('fee-total-agreed').value = '';
+    document.getElementById('payments-table-body').innerHTML = '';
+  }
+};
+
+window.saveFeePayment = async function() {
+  const name = document.getElementById('fee-client-name').value.trim();
+  const totalAgreed = parseFloat(document.getElementById('fee-total-agreed').value) || 0;
+  const payAmt = parseFloat(document.getElementById('fee-payment-amount').value) || 0;
+  const payDate = document.getElementById('fee-payment-date').value;
+
+  const client = window.allClients.find(c => c.fullname === name);
+  if (!client) return alert("يرجى اختيار موكل صحيح.");
+
+  try {
+    // تحديث إجمالي الأتعاب في مستند الموكل
+    await updateDoc(doc(db, "clients", client.id), { agreedFee: totalAgreed });
+
+    // إضافة دفعة جديدة إذا وجدت
+    if (payAmt > 0 && payDate) {
+      await addDoc(collection(db, "payments"), {
+        clientId: client.id,
+        clientName: name,
+        amount: payAmt,
+        date: payDate,
+        timestamp: Date.now()
+      });
+
+      // حساب إجمالي المدفوعات الحالي للموكل (تنبيه اكتمال السداد)
+      const currentPayments = window.allPayments.filter(p => p.clientName === name);
+      const totalPaidSoFar = currentPayments.reduce((sum, p) => sum + p.amount, 0) + payAmt;
+
+      document.getElementById('fee-payment-amount').value = '';
+      document.getElementById('fee-payment-date').value = '';
+
+      if (totalPaidSoFar >= totalAgreed && totalAgreed > 0) {
+        alert(`✅ تم تسجيل الدفعة بنجاح.\n\n🎊 تنبيه: الموكل ${name} قد سدد كامل المبلغ المتفق عليه (${totalAgreed.toLocaleString()} ل.س).`);
+      } else {
+        alert("تم تسجيل الدفعة وتحديث الأتعاب بنجاح!");
+      }
+    } else {
+      alert("تم تحديث إجمالي الأتعاب بنجاح!");
+    }
+    updateFeesTable(name);
+    updateGlobalFeesSummary();
+  } catch (e) { alert("خطأ في الحفظ"); }
+};
+
+window.updateFeesTable = function(clientName) {
+  const tbody = document.getElementById('payments-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  const client = window.allClients.find(c => c.fullname === clientName);
+  const payments = window.allPayments.filter(p => p.clientName === clientName).sort((a,b) => new Date(b.date) - new Date(a.date));
+  
+  let totalPaid = 0;
+  payments.forEach(p => {
+    totalPaid += p.amount;
+    tbody.innerHTML += `<tr>
+      <td>${p.date}</td>
+      <td style="color:var(--accent-green); font-weight:bold;">${p.amount.toLocaleString()} ل.س</td>
+      <td><button class="action-btn" style="background:#ef4444" onclick="deletePayment('${p.id}', '${clientName}')">حذف</button></td>
+    </tr>`;
+  });
+
+  const agreed = client ? (client.agreedFee || 0) : 0;
+  document.getElementById('fee-table-title').innerHTML = `سجل دفعات الموكل (المسدد: ${totalPaid.toLocaleString()} | المتبقي: ${(agreed - totalPaid).toLocaleString()} ل.س)`;
+};
+
+// وظيفة عرض ملف الموكل الشامل للأستاذ محمد
+window.viewClientProfile = function(id) {
+  const client = window.allClients.find(c => c.id === id);
+  if (!client) return;
+  const normClient = normalizeArabic(client.fullname);
+
+  document.getElementById('p-client-name').textContent = `ملف الموكل الشامل: ${client.fullname}`;
+  
+  // المعلومات الشخصية
+  document.getElementById('p-client-info').innerHTML = `
+      <div class="info-row"><span class="info-label">الهاتف:</span><span class="info-value">${client.phone || '-'}</span></div>
+      <div class="info-row"><span class="info-label">واتساب:</span><span class="info-value">${client.whatsapp || '-'}</span></div>
+      <div class="info-row"><span class="info-label">العنوان:</span><span class="info-value">${client.address || '-'}</span></div>
+      <div class="info-row"><span class="info-label">اسم المستخدم:</span><span class="info-value">${client.username}</span></div>
+  `;
+
+  // الحالة المالية
+  const myPayments = window.allPayments.filter(p => p.clientId === client.id);
+  const totalPaid = myPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const agreed = parseFloat(client.agreedFee) || 0;
+  document.getElementById('p-client-finance').innerHTML = `
+      <div class="info-row"><span class="info-label">إجمالي الأتعاب المتفق عليها:</span><span class="info-value">${agreed.toLocaleString()} ل.س</span></div>
+      <div class="info-row"><span class="info-label">إجمالي المسدد:</span><span class="info-value" style="color:var(--accent-green)">${totalPaid.toLocaleString()} ل.س</span></div>
+      <div class="info-row"><span class="info-label">المبلغ المتبقي:</span><span class="info-value" style="color:#ef4444">${(agreed - totalPaid).toLocaleString()} ل.س</span></div>
+  `;
+
+  // وظيفة فلترة موحدة تعتمد على ID الموكل أولاً لضمان الدقة
+  const filterByClient = (caseItem) => {
+      if (caseItem.clientId) return caseItem.clientId === client.id;
+      if (!caseItem.client) return false;
+      return normalizeArabic(caseItem.client) === normClient;
+  };
+
+  // جلب كافة القضايا (تحقيق، إحالة، تنفيذ، عامة، مفصولة)
+  const invCases = window.allInvestigations.filter(filterByClient).map(c => ({...c, cat: 'تحقيق'}));
+  const refCases = window.allReferrals.filter(filterByClient).map(c => ({...c, cat: 'إحالة'}));
+  const exeCases = window.allExecutions.filter(filterByClient).map(c => ({...c, cat: 'تنفيذ', base: `${c.base}/${c.year}`}));
+  const genCases = window.allGeneralCases.filter(filterByClient).map(c => ({...c, cat: 'عامة', base: `${c.base}/${c.year}`}));
+  const sepCases = window.allSeparatedCases.filter(filterByClient).map(c => ({...c, cat: 'مفصولة', base: `قرار: ${c.decisionNum}`}));
+  
+  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases];
+  
+  let casesHtml = '';
+  if (allMyCases.length === 0) {
+      casesHtml = '<p style="text-align:center; color:var(--gray-silver); padding:10px;">لا توجد قضايا مسجلة لهذا الموكل.</p>';
+  } else {
+      casesHtml = '<table class="data-table" style="font-size:0.9rem;"><thead><tr><th>النوع</th><th>رقم الأساس/القرار</th><th>الخصم</th><th>الحالة / النتيجة</th></tr></thead><tbody>';
+      allMyCases.forEach(c => {
+          const status = c.result || c.clientStatus || c.actionNext || 'نشطة';
+          const baseStr = c.cat === 'تحقيق' || c.cat === 'إحالة' ? `${c.base}/${c.year}` : c.base;
+          casesHtml += `<tr>
+            <td><span class="status-badge status-active">${c.cat}</span></td>
+            <td>${baseStr}</td>
+            <td>${c.opponent || '-'}</td>
+            <td>${status}</td>
+          </tr>`;
+      });
+      casesHtml += '</tbody></table>';
+  }
+  document.getElementById('p-client-cases').innerHTML = casesHtml;
+
+  // الوكالات
+  const agencies = window.allAgencies.filter(a => normalizeArabic(a.clientName) === normClient);
+  let agenciesHtml = '';
+  if (agencies.length === 0) {
+      agenciesHtml = '<p style="text-align:center; color:var(--gray-silver); padding:10px;">لا توجد وكالات مسجلة.</p>';
+  } else {
+      agenciesHtml = '<table class="data-table" style="font-size:0.9rem;"><thead><tr><th>النوع</th><th>النطاق</th><th>التاريخ</th><th>التفاصيل</th></tr></thead><tbody>';
+      agencies.forEach(a => {
+          agenciesHtml += `<tr><td>${a.type}</td><td>${a.scope}</td><td>${a.date}</td><td>${a.details}</td></tr>`;
+      });
+      agenciesHtml += '</tbody></table>';
+  }
+  document.getElementById('p-client-agencies').innerHTML = agenciesHtml;
+
+  // عرض الملاحظات الخاصة في ملف الموكل الشامل
+  document.getElementById('p-client-private-notes').textContent = client.privateNotes || 'لا توجد ملاحظات خاصة مسجلة لهذا الموكل.';
+
+  document.getElementById('client-profile-modal').style.display = 'flex';
+};
+
+window.closeClientProfileModal = function() {
+  document.getElementById('client-profile-modal').style.display = 'none';
+};
+
+// Separated Cases functions
+window.saveSeparatedCase = async function() {
+  const clientName = document.getElementById('sep-client').value.trim();
+  const clientObj = window.allClients.find(c => c.fullname === clientName);
+  const caseData = {
+    client: clientName,
+    clientId: clientObj ? clientObj.id : null,
+    opponent: document.getElementById('sep-opponent').value.trim(),
+    decisionNum: document.getElementById('sep-decision-num').value.trim(),
+    base: document.getElementById('sep-base').value.trim(),
+    court: document.getElementById('sep-court').value.trim(),
+    result: document.getElementById('sep-result').value.trim(),
+    timestamp: Date.now()
+  };
+
+  if (!caseData.client || !caseData.decisionNum) return alert("يرجى إدخال اسم الموكل ورقم القرار.");
+
+  try {
+    if (window.editingId) {
+      await updateDoc(doc(db, "separatedCases", window.editingId), caseData);
+      alert("تم تحديث القرار بنجاح!");
+    } else {
+      await addDoc(collection(db, "separatedCases"), caseData);
+      alert("تم أرشفة القرار بنجاح!");
+    }
+    resetSeparatedCaseForm();
+  } catch (e) { alert("خطأ في الحفظ"); }
+};
+
+window.updateSeparatedCasesTable = function() {
+  const tbody = document.getElementById('separated-cases-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  window.allSeparatedCases.sort((a,b) => b.timestamp - a.timestamp).forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td><span style="color:var(--accent-gold); font-weight:bold;">${c.client}</span><br><small>${c.opponent}</small></td>
+      <td>قرار: ${c.decisionNum}<br>أساس: ${c.base}</td>
+      <td>${c.court}</td>
+      <td style="color:var(--accent-green)">${c.result}</td>
+      <td>
+        <button class="action-btn" style="background:#25D366" onclick="sendSeparatedWhatsApp('${c.id}')">واتساب 📱</button>
+        <button class="action-btn" style="background:var(--accent-gold)" onclick="printSeparatedCase('${c.id}')">طباعة 🖨️</button>
+        <button class="action-btn" style="background:var(--accent-blue)" onclick="editSeparatedCase('${c.id}')">تعديل</button>
+        <button class="action-btn" style="background:#ef4444" onclick="deleteSeparatedCase('${c.id}')">حذف</button>
+      </td>
+    </tr>`;
+  });
+};
+
+window.sendSeparatedWhatsApp = function(id) {
+  const c = window.allSeparatedCases.find(item => item.id === id);
+  const clientInfo = window.allClients.find(cl => cl.fullname.trim() === c.client.trim());
+
+  if (!clientInfo || (!clientInfo.whatsapp && !clientInfo.phone)) return alert("لا يتوفر رقم واتساب لهذا الموكل.");
+
+  let phone = clientInfo.whatsapp || clientInfo.phone;
+  phone = phone.replace(/\D/g, '');
+  if (phone.startsWith('09')) phone = '963' + phone.substring(1);
+
+  let msg = `*مكتب المحامي محمد النزال*\n\nالسيد/ة *${c.client}* المحترم/ة،\nنحيطكم علماً بصدور قرار في قضيتكم المنظورة أمام *${c.court}*:\n\n⚖️ *رقم القرار:* ${c.decisionNum}\n🔢 *رقم الأساس:* ${c.base}\n👤 *الخصم:* ${c.opponent}\n📝 *النتيجة:* ${c.result}\n\nللمراجعة والاستفسار يرجى التواصل مع المكتب.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.printSeparatedCase = function(id) {
+  const c = window.allSeparatedCases.find(item => item.id === id);
+  const printWindow = window.open('', '_blank');
+  const html = `
+    <div style="direction:rtl; font-family:Tahoma; padding:40px; border:2px solid #333; border-radius:15px; max-width:700px; margin:20px auto;">
+      <h1 style="text-align:center; color:#c5a059;">مكتب المحامي محمد النزال</h1>
+      <h2 style="text-align:center; border-bottom:1px solid #ddd; padding-bottom:10px;">إشعار صدور قرار قضائي</h2>
+      <p><b>اسم الموكل:</b> ${c.client}</p>
+      <p><b>الخصم:</b> ${c.opponent}</p>
+      <p><b>رقم القرار:</b> ${c.decisionNum}</p>
+      <p><b>رقم الأساس:</b> ${c.base}</p>
+      <p><b>المحكمة:</b> ${c.court}</p>
+      <p><b>النتيجة النهائية:</b> ${c.result}</p>
+      <p style="margin-top:50px; text-align:left;">تحريراً في: ${new Date().toLocaleDateString('ar-EG')}</p>
+    </div>`;
+  printWindow.document.write(`<html><body onload="window.print(); window.close();">${html}</body></html>`);
+  printWindow.document.close();
+};
+
+window.editSeparatedCase = function(id) {
+  const c = window.allSeparatedCases.find(item => item.id === id);
+  window.editingId = id;
+  document.getElementById('sep-client').value = c.client;
+  document.getElementById('sep-opponent').value = c.opponent;
+  document.getElementById('sep-decision-num').value = c.decisionNum;
+  document.getElementById('sep-base').value = c.base;
+  document.getElementById('sep-court').value = c.court;
+  document.getElementById('sep-result').value = c.result;
+  document.getElementById('separated-case-form').scrollIntoView({behavior:'smooth'});
+};
+
+window.deleteSeparatedCase = async function(id) {
+  if (confirm("هل تريد حذف هذا القرار من الأرشيف؟")) {
+    await deleteDoc(doc(db, "separatedCases", id));
+  }
+};
+
+window.resetSeparatedCaseForm = function() {
+  window.editingId = null;
+  document.getElementById('separated-case-form').reset();
+};
+
+window.updateGlobalFeesSummary = function() {
+  const el = document.getElementById('global-total-agreed');
+  if (!el) return;
+  
+  const totalAgreed = window.allClients.reduce((sum, c) => sum + (parseFloat(c.agreedFee) || 0), 0);
+  const totalPaid = window.allPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  
+  document.getElementById('global-total-agreed').textContent = totalAgreed.toLocaleString() + " ل.س";
+  document.getElementById('global-total-paid').textContent = totalPaid.toLocaleString() + " ل.س";
+  document.getElementById('global-total-remaining').textContent = (totalAgreed - totalPaid).toLocaleString() + " ل.س";
+  document.getElementById('global-payments-count').textContent = window.allPayments.length;
+};
+
+window.deletePayment = async function(id, clientName) {
+  if (confirm("هل تريد حذف هذه الدفعة؟")) {
+    await deleteDoc(doc(db, "payments", id));
+    updateFeesTable(clientName);
+    updateGlobalFeesSummary();
+  }
 };
 
 // Dashboard functions
@@ -901,7 +1451,7 @@ window.refreshDashboardData = function() {
     stats[1].textContent = allCases.filter(c => c.clientStatus === 'موقوف').length;
     const today = new Date().toISOString().split('T')[0];
     stats[2].textContent = window.allSessions.filter(s => s.date === today).length;
-    stats[3].textContent = window.allClients.length;
+    stats[3].textContent = window.allClients.filter(c => !c.isArchived).length;
   }
 
   const tbody = document.getElementById('dashboard-updates-tbody');
@@ -931,16 +1481,20 @@ window.refreshDashboardData = function() {
 // Navigation and UI functions
 window.showSection = function(sectionId) {
   document.querySelectorAll('.main-content section').forEach(s => s.style.display = 'none');
-  document.getElementById(sectionId).style.display = 'block';
+  if(document.getElementById(sectionId)) document.getElementById(sectionId).style.display = 'block';
 
   const loaders = {
     'dashboard-overview-section': refreshDashboardData,
+    'daily-work-section': refreshDailyWorkData,
+    'potential-clients-section': updatePotentialClientsTable,
     'clients-management-section': updateClientsTable,
     'agencies-management-section': updateAgenciesTable,
     'investigation-cases-section': updateInvestigationTable,
+    'fees-management-section': () => { updateGlobalFeesSummary(); const cn = document.getElementById('fee-client-name').value; if(cn) updateFeesTable(cn); },
     'referral-cases-section': updateReferralTable,
     'sessions-management-section': () => { populateAllCasesDatalist(); updateSessionsTable(); },
     'execution-management-section': updateExecutionTable,
+    'separated-cases-section': updateSeparatedCasesTable,
     'messages-management-section': updateMessagesTable,
     'case-management-section': () => { resetGeneralCaseForm(); updateGeneralCasesTable(); }
   };
@@ -963,27 +1517,95 @@ window.setupNavigation = function() {
 
 // Client Portal Data Loading
 window.loadClientPortalData = function(client) {
-  document.getElementById('client-personal-info').innerHTML = `<div class="info-row"><span class="info-label">الهاتف:</span><span class="info-value">${client.phone || '-'}</span></div><div class="info-row"><span class="info-label">العنوان:</span><span class="info-value">${client.address || '-'}</span></div>`;
+  const normClient = normalizeArabic(client.fullname);
+  document.getElementById('client-personal-info').innerHTML = `
+    <div class="info-row"><span class="info-label">الهاتف:</span><span class="info-value">${client.phone || '-'}</span></div>
+    <div class="info-row"><span class="info-label">واتساب:</span><span class="info-value">${client.whatsapp || '-'}</span></div>
+    <div class="info-row"><span class="info-label">البريد الإلكتروني:</span><span class="info-value">${client.email || '-'}</span></div>
+    <div class="info-row"><span class="info-label">العنوان:</span><span class="info-value">${client.address || '-'}</span></div>
+  `;
 
-  const invCases = window.allInvestigations.filter(c => c.client === client.fullname).map(c => ({...c, category: 'تحقيق'}));
-  const refCases = window.allReferrals.filter(c => c.client === client.fullname).map(c => ({...c, category: 'إحالة'}));
-  const exeCases = window.allExecutions.filter(c => c.client === client.fullname).map(c => ({...c, category: 'تنفيذ', dept: c.type}));
-  const genCases = window.allGeneralCases.filter(c => c.client === client.fullname).map(c => ({...c, category: 'عامة'}));
-  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases];
+  // قسم التنبيهات بصدور القرارات
+  const notifyArea = document.getElementById('client-notifications-area');
+  
+  // وظيفة فلترة موحدة لضمان مطابقة الأسماء بشكل مرن أو عبر ID
+  const filterByClient = (caseItem) => {
+    // الربط عبر ID هو الأولوية لضمان دقة 100%
+    if (caseItem.clientId) return caseItem.clientId === client.id;
+    
+    // التراجع للمطابقة عبر الاسم للسجلات القديمة
+    if (!caseItem.client) return false;
+    const caseClient = normalizeArabic(caseItem.client);
+    return caseClient.includes(normClient) || normClient.includes(caseClient);
+  };
+
+  const myDecisions = window.allSeparatedCases.filter(filterByClient);
+  
+  notifyArea.innerHTML = '';
+  myDecisions.forEach(dec => {
+    notifyArea.innerHTML += `
+      <div class="decision-alert">
+        <div style="font-size: 2rem;">📜</div>
+        <div style="flex:1">
+          <h3 style="margin:0; color:var(--accent-gold); font-size:1.1rem;">إشعار بصدور قرار قضائي جديد</h3>
+          <p style="margin:5px 0 0 0; color:#fff; line-height:1.4;">نود إبلاغكم بصدور القرار رقم <b>${dec.decisionNum}</b> في قضيتكم المنظورة أمام <b>${dec.court}</b>. النتيجة: <span style="color:var(--accent-green); font-weight:bold;">${dec.result}</span></p>
+        </div>
+      </div>
+    `;
+  });
+
+  // جلب كافة أنواع القضايا المرتبطة بالموكل
+  const invCases = window.allInvestigations.filter(filterByClient).map(c => ({...c, category: 'تحقيق'}));
+  const refCases = window.allReferrals.filter(filterByClient).map(c => ({...c, category: 'إحالة'}));
+  const exeCases = window.allExecutions.filter(filterByClient).map(c => ({...c, category: 'تنفيذ', dept: c.type}));
+  const genCases = window.allGeneralCases.filter(filterByClient).map(c => ({...c, category: 'عامة'}));
+  const sepCases = window.allSeparatedCases.filter(filterByClient).map(c => ({...c, category: 'مفصولة', base: `قرار رقم: ${c.decisionNum} / أساس: ${c.base}`, year: ''}));
+  
+  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases];
 
   const caseContainer = document.getElementById('client-case-details');
   caseContainer.innerHTML = allMyCases.length ? '' : '<p style="text-align:center; color:var(--gray-silver);">لا توجد دعوى نشطة حالياً</p>';
-  allMyCases.forEach(c => { caseContainer.innerHTML += `<div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;"><h4>📦 ${c.category} أساس: ${c.base}/${c.year}</h4><div class="info-row"><span class="info-label">المحكمة/الدائرة:</span><span class="info-value">${c.dept || c.court || ''}</span></div></div>`; });
+  allMyCases.forEach(c => { 
+    const basicInfo = (c.category === 'مفصولة' || !c.year) ? (c.base || '') : `${c.base}/${c.year}`;
 
-  const agency = window.allAgencies.find(a => a.clientName === client.fullname);
-  if (agency) { document.getElementById('client-agency-details').innerHTML = `<div class="info-row"><span class="info-label">نوع الوكالة:</span><span class="info-value">${agency.type}</span></div><div class="info-row"><span class="info-label">تاريخ:</span><span class="info-value">${agency.date}</span></div>`; }
-  else { document.getElementById('client-agency-details').innerHTML = '<p style="text-align:center; color:var(--gray-silver);">لا توجد وكالة مسجلة</p>'; }
+    // تحديد اللون بناءً على نوع القضية لتمييزها بصرياً للموكل
+    let catColor = 'var(--accent-gold)'; 
+    if (c.category === 'تحقيق') catColor = '#ef4444'; // أحمر للتحقيق
+    else if (c.category === 'تنفيذ') catColor = 'var(--accent-green)'; // أخضر للتنفيذ
+    else if (c.category === 'إحالة') catColor = 'var(--accent-blue)'; // أزرق للإحالة
+    else if (c.category === 'مفصولة') catColor = 'var(--gray-silver)'; // رمادي للمفصولة
+
+    caseContainer.innerHTML += `
+      <div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px; border-right: 4px solid ${catColor}; padding-right: 12px;">
+        <h4 style="color:${catColor}; margin-bottom:5px;">📦 ${c.category} | ${basicInfo}</h4>
+        <div class="info-row"><span class="info-label">المحكمة/الدائرة:</span><span class="info-value">${c.dept || c.court || ''}</span></div>
+        ${c.result ? `<div class="info-row"><span class="info-label">النتيجة:</span><span class="info-value" style="color:var(--accent-green)">${c.result}</span></div>` : ''}
+      </div>`; 
+  });
+
+
+  // تحميل البيانات المالية للموكل
+  const myPayments = window.allPayments.filter(p => p.clientId === client.id).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const totalPaid = myPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const agreed = client.agreedFee || 0;
+
+  if(document.getElementById('c-total-fees')) document.getElementById('c-total-fees').textContent = agreed.toLocaleString() + " ل.س";
+  if(document.getElementById('c-paid-fees')) document.getElementById('c-paid-fees').textContent = totalPaid.toLocaleString() + " ل.س";
+  if(document.getElementById('c-remaining-fees')) document.getElementById('c-remaining-fees').textContent = (agreed - totalPaid).toLocaleString() + " ل.س";
+
+  const payTbody = document.getElementById('client-payments-history');
+  if(payTbody) {
+    payTbody.innerHTML = '';
+    myPayments.forEach(p => {
+      payTbody.innerHTML += `<tr><td>${p.date}</td><td style="color:var(--accent-green)">${p.amount.toLocaleString()} ل.س</td></tr>`;
+    });
+  }
 
   const sessionTbody = document.getElementById('client-sessions-table');
   sessionTbody.innerHTML = '';
-  window.allSessions.filter(s => s.caseRef.includes(client.fullname)).forEach(s => { sessionTbody.innerHTML += `<tr><td>${s.date}</td><td>${s.court}</td><td>${s.notes || '-'}</td></tr>`; });
+  window.allSessions.filter(s => normalizeArabic(s.caseRef).includes(normClient)).forEach(s => { sessionTbody.innerHTML += `<tr><td>${s.date}</td><td>${s.court}</td><td>${s.notes || '-'}</td></tr>`; });
 
-  updateClientMessagesList(client.fullname, window.allMessages.filter(m => m.from === client.fullname).sort((a,b) => b.timestamp - a.timestamp));
+  updateClientMessagesList(client.fullname, window.allMessages.filter(m => normalizeArabic(m.from) === normClient).sort((a,b) => b.timestamp - a.timestamp));
 };
 
 window.updateClientMessagesList = function(clientName, myMessages) {
@@ -1056,6 +1678,31 @@ window.exportToExcel = function() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "قائمة الموكلين");
   XLSX.writeFile(wb, "الموكلين_مكتب_النزال.xlsx");
+};
+
+window.exportFeesToExcel = function() {
+  if (window.allClients.length === 0) {
+    alert("لا توجد بيانات مالية لتصديرها.");
+    return;
+  }
+
+  const data = window.allClients.map(c => {
+    const payments = window.allPayments.filter(p => p.clientId === c.id);
+    const paid = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const agreed = parseFloat(c.agreedFee) || 0;
+    return {
+      "اسم الموكل": c.fullname,
+      "الأتعاب المتفق عليها": agreed,
+      "المبلغ المسدد": paid,
+      "المبلغ المتبقي": agreed - paid,
+      "عدد الدفعات": payments.length
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تقرير الأتعاب");
+  XLSX.writeFile(wb, "التقرير_المالي_مكتب_النزال.xlsx");
 };
 
 window.exportToPDF = function() {
