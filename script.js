@@ -20,6 +20,9 @@ window.allPotentialClients = [];
 window.allSeparatedCases = [];
 window.allAgencies = [];
 window.allGeneralCases = [];
+window.currentViewingSepId = null;
+window.currentViewingCaseId = null;
+window.currentViewingCaseType = null;
 window.editingId = null;
 window.currentClient = null;
 window.clientViewMode = 'active'; // 'active' or 'archived'
@@ -404,6 +407,43 @@ window.resetAgencyForm = function() {
 window.saveInvestigationCase = async function() {
   const clientName = document.getElementById('inv-client').value.trim();
   const clientObj = window.allClients.find(c => c.fullname === clientName);
+  const isSeparated = document.getElementById('inv-is-separated').checked;
+
+  if (isSeparated) {
+    const decisionNum = document.getElementById('inv-sep-decision-num').value.trim();
+    const sepDate = document.getElementById('inv-sep-date').value;
+    const sepResult = document.getElementById('inv-sep-result').value.trim();
+
+    if (!clientName || !decisionNum) {
+      alert("يرجى إكمال بيانات الفصل (اسم الموكل ورقم القرار).");
+      return;
+    }
+
+    const separatedData = {
+      client: clientName,
+      clientId: clientObj ? clientObj.id : null,
+      opponent: document.getElementById('inv-opponent').value.trim(),
+      decisionNum: decisionNum,
+      base: document.getElementById('inv-base').value.trim() + '/' + document.getElementById('inv-year').value.trim(),
+      court: document.getElementById('inv-dept').value.trim(),
+      result: sepResult,
+      separationDate: sepDate,
+      subject: document.getElementById('inv-subject').value.trim(),
+      category: 'تحقيق',
+      timestamp: Date.now()
+    };
+
+    await addDoc(collection(db, "separatedCases"), separatedData);
+
+    if (window.editingId) {
+      await deleteDoc(doc(db, "investigations", window.editingId));
+    }
+
+    alert("تم فصل قضية التحقيق ونقلها للأرشيف بنجاح! ✅");
+    resetInvestigationForm();
+    return;
+  }
+
   const caseData = {
     client: clientName,
     clientId: clientObj ? clientObj.id : null,
@@ -459,12 +499,30 @@ window.updateInvestigationTable = function() {
       <td>${c.dept} / ${c.city}</td>
       <td style="font-size:0.8rem; color:var(--accent-blue)">${c.remindDate ? `📅 ${c.remindDate}<br>` : ''}${c.remindAction || ''}</td>
       <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewInvestigationCase('${c.id}')">عرض 👁️</button>
         <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('investigation', '${c.id}')">طباعة وصل</button>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editInvestigationCase('${c.id}')">تعديل</button>
         <button class="action-btn" style="background: #ef4444;" onclick="deleteInvestigationCase('${c.id}')">حذف</button>
       </td>
     </tr>`;
   });
+};
+
+window.viewInvestigationCase = function(id) {
+  const c = window.allInvestigations.find(item => item.id === id);
+  if (!c) return;
+  window.currentViewingCaseId = id;
+  window.currentViewingCaseType = 'investigation';
+  
+  document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل (تحقيق): ${c.client}`;
+  document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
+  document.getElementById('view-case-court').textContent = c.dept;
+  
+  document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
+  document.getElementById('case-next-date').value = c.nextSessionDate || '';
+  document.getElementById('case-postpone-reason').value = c.postponementReason || '';
+
+  document.getElementById('general-case-view-modal').style.display = 'flex';
 };
 
 window.editInvestigationCase = function(id) {
@@ -503,13 +561,55 @@ window.deleteInvestigationCase = async function(id) {
 window.resetInvestigationForm = function() {
   window.editingId = null;
   document.getElementById('investigation-form').reset();
+  document.getElementById('inv-separated-fields').style.display = 'none';
   document.querySelector('#investigation-form .action-btn').textContent = "إضافة قضية تحقيق";
+};
+
+window.toggleInvSeparatedFields = function() {
+  document.getElementById('inv-separated-fields').style.display = document.getElementById('inv-is-separated').checked ? 'grid' : 'none';
 };
 
 // Referral Cases functions
 window.saveReferralCase = async function() {
   const clientName = document.getElementById('ref-client').value.trim();
   const clientObj = window.allClients.find(c => c.fullname === clientName);
+  const isSeparated = document.getElementById('ref-is-separated').checked;
+
+  if (isSeparated) {
+    const decisionNum = document.getElementById('ref-sep-decision-num').value.trim();
+    const sepDate = document.getElementById('ref-sep-date').value;
+    const sepResult = document.getElementById('ref-sep-result').value.trim();
+
+    if (!clientName || !decisionNum) {
+      alert("يرجى إكمال بيانات الفصل (اسم الموكل ورقم القرار).");
+      return;
+    }
+
+    const separatedData = {
+      client: clientName,
+      clientId: clientObj ? clientObj.id : null,
+      opponent: document.getElementById('ref-opponent').value.trim(),
+      decisionNum: decisionNum,
+      base: document.getElementById('ref-base').value.trim() + '/' + document.getElementById('ref-year').value.trim(),
+      court: document.getElementById('ref-dept').value.trim(),
+      result: sepResult,
+      separationDate: sepDate,
+      subject: document.getElementById('ref-subject').value.trim(),
+      category: 'إحالة',
+      timestamp: Date.now()
+    };
+
+    await addDoc(collection(db, "separatedCases"), separatedData);
+
+    if (window.editingId) {
+      await deleteDoc(doc(db, "referrals", window.editingId));
+    }
+
+    alert("تم فصل قضية الإحالة ونقلها للأرشيف بنجاح! ✅");
+    resetReferralForm();
+    return;
+  }
+
   const caseData = {
     client: clientName,
     clientId: clientObj ? clientObj.id : null,
@@ -560,12 +660,30 @@ window.updateReferralTable = function() {
       <td>${c.crime}</td>
       <td style="font-size:0.8rem; color:var(--accent-blue)">${c.remindDate ? `📅 ${c.remindDate}<br>` : ''}${c.remindAction || ''}</td>
       <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewReferralCase('${c.id}')">عرض 👁️</button>
         <button class="action-btn" style="background: var(--accent-green); margin-left: 5px;" onclick="printCaseReceipt('referral', '${c.id}')">طباعة وصل</button>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editReferralCase('${c.id}')">تعديل</button>
         <button class="action-btn" style="background: #ef4444;" onclick="deleteReferralCase('${c.id}')">حذف</button>
       </td>
     </tr>`;
   });
+};
+
+window.viewReferralCase = function(id) {
+  const c = window.allReferrals.find(item => item.id === id);
+  if (!c) return;
+  window.currentViewingCaseId = id;
+  window.currentViewingCaseType = 'referral';
+  
+  document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل (إحالة): ${c.client}`;
+  document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
+  document.getElementById('view-case-court').textContent = c.dept;
+  
+  document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
+  document.getElementById('case-next-date').value = c.nextSessionDate || '';
+  document.getElementById('case-postpone-reason').value = c.postponementReason || '';
+
+  document.getElementById('general-case-view-modal').style.display = 'flex';
 };
 
 window.editReferralCase = function(id) {
@@ -600,7 +718,12 @@ window.deleteReferralCase = async function(id) {
 window.resetReferralForm = function() {
   window.editingId = null;
   document.getElementById('referral-form').reset();
+  document.getElementById('ref-separated-fields').style.display = 'none';
   document.querySelector('#referral-form .action-btn').textContent = "إضافة قضية إحالة";
+};
+
+window.toggleRefSeparatedFields = function() {
+  document.getElementById('ref-separated-fields').style.display = document.getElementById('ref-is-separated').checked ? 'grid' : 'none';
 };
 
 // Execution Management functions
@@ -1002,12 +1125,17 @@ window.resetPotentialClientForm = function() {
 window.toggleCaseTypeFields = function() {
   const type = document.getElementById('case-type').value;
   const row = document.getElementById('notation-trigger-row');
+  row.style.display = 'flex'; // يظهر دائماً لاحتوائه على خيار "فصلت" المتاح للجميع
+
+  const notationCheck = document.getElementById('has-notation').parentElement;
+  const taxCheck = document.getElementById('has-tax').parentElement;
+
   if (type === 'مدني' || type === 'عقاري') {
-    row.style.display = 'flex';
+    notationCheck.style.display = 'flex';
+    taxCheck.style.display = 'flex';
   } else {
-    row.style.display = 'none';
-    document.getElementById('notation-fields').style.display = 'none';
-    document.getElementById('tax-fields').style.display = 'none';
+    notationCheck.style.display = 'none';
+    taxCheck.style.display = 'none';
   }
 };
 
@@ -1019,11 +1147,51 @@ window.toggleTaxFields = function() {
   document.getElementById('tax-fields').style.display = document.getElementById('has-tax').checked ? 'grid' : 'none';
 };
 
+window.toggleSeparatedFields = function() {
+  document.getElementById('separated-fields').style.display = document.getElementById('is-separated').checked ? 'grid' : 'none';
+};
+
 // General Case Management functions
 window.saveGeneralCase = async function() {
   try {
     const clientName = document.getElementById('client-full-name').value.trim();
     const clientObj = window.allClients.find(c => c.fullname === clientName);
+    const isSeparated = document.getElementById('is-separated').checked;
+
+    if (isSeparated) {
+      const decisionNum = document.getElementById('gen-sep-decision-num').value.trim();
+      const sepDate = document.getElementById('gen-sep-date').value;
+      const sepResult = document.getElementById('gen-sep-result').value.trim();
+
+      if (!clientName || !decisionNum) {
+        alert("يرجى إكمال بيانات الفصل (اسم الموكل ورقم القرار).");
+        return;
+      }
+
+      const separatedData = {
+        client: clientName,
+        clientId: clientObj ? clientObj.id : null,
+        opponent: document.getElementById('opponent').value.trim(),
+        decisionNum: decisionNum,
+        base: document.getElementById('case-number').value.trim() + '/' + document.getElementById('case-year').value.trim(),
+        court: document.getElementById('court').value.trim(),
+        result: sepResult,
+        separationDate: sepDate,
+        subject: document.getElementById('case-subject').value.trim(),
+        timestamp: Date.now()
+      };
+
+      await addDoc(collection(db, "separatedCases"), separatedData);
+
+      if (window.editingId) {
+        await deleteDoc(doc(db, "generalCases", window.editingId));
+      }
+
+      alert("تم فصل الدعوى ونقلها إلى أرشيف القضايا المفصولة بنجاح! ✅");
+      resetGeneralCaseForm();
+      return;
+    }
+
     const caseData = {
       court: document.getElementById('court').value.trim(),
       base: document.getElementById('case-number').value.trim(),
@@ -1086,11 +1254,104 @@ window.updateGeneralCasesTable = function() {
       <td>${c.type}</td>
       <td>${c.court} / ${c.city}</td>
       <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewGeneralCase('${c.id}')">عرض 👁️</button>
         <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editGeneralCase('${c.id}')">تعديل</button>
         <button class="action-btn" style="background: #ef4444;" onclick="deleteGeneralCase('${c.id}')">حذف</button>
       </td>
     </tr>`;
   });
+};
+
+window.viewGeneralCase = function(id) {
+  const c = window.allGeneralCases.find(item => item.id === id);
+  if (!c) return;
+  window.currentViewingCaseId = id;
+  window.currentViewingCaseType = 'general';
+  
+  document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل: ${c.client}`;
+  document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
+  document.getElementById('view-case-court').textContent = c.court;
+  
+  document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
+  document.getElementById('case-next-date').value = c.nextSessionDate || '';
+  document.getElementById('case-postpone-reason').value = c.postponementReason || '';
+
+  document.getElementById('general-case-view-modal').style.display = 'flex';
+};
+
+window.closeGeneralCaseViewModal = function() {
+  document.getElementById('general-case-view-modal').style.display = 'none';
+};
+
+window.saveCaseSessionUpdate = async function() {
+  const outcome = document.getElementById('case-session-outcome').value.trim();
+  const nextDate = document.getElementById('case-next-date').value;
+  const reason = document.getElementById('case-postpone-reason').value.trim();
+  const shouldSendWhatsapp = document.getElementById('send-whatsapp-update').checked;
+
+  if (!window.currentViewingCaseId) return;
+
+  const collectionName = window.currentViewingCaseType === 'investigation' ? "investigations" : 
+                         window.currentViewingCaseType === 'referral' ? "referrals" : "generalCases";
+
+  const caseTypeLabel = window.currentViewingCaseType === 'investigation' ? "تحقيق" : 
+                        window.currentViewingCaseType === 'referral' ? "إحالة" : "عامة";
+
+  const sourceList = window.currentViewingCaseType === 'investigation' ? window.allInvestigations : 
+                     window.currentViewingCaseType === 'referral' ? window.allReferrals : window.allGeneralCases;
+  const c = sourceList.find(item => item.id === window.currentViewingCaseId);
+
+  try {
+    const caseRef = doc(db, collectionName, window.currentViewingCaseId);
+    await updateDoc(caseRef, {
+      lastSessionOutcome: outcome,
+      nextSessionDate: nextDate,
+      postponementReason: reason,
+      updatedAt: Date.now()
+    });
+
+    if (nextDate) {
+      await addDoc(collection(db, "sessions"), {
+        caseRef: `${c.client} - ${caseTypeLabel}: ${c.base}/${c.year}`,
+        court: c.court || c.dept,
+        date: nextDate,
+        time: "",
+        notes: reason || outcome,
+        createdAt: Date.now()
+      });
+    }
+
+    // إرسال رسالة واتساب تلقائية للموكل تحتوي على مستجدات الجلسة
+    const clientInfo = window.allClients.find(cl => cl.id === c.clientId || normalizeArabic(cl.fullname) === normalizeArabic(c.client));
+    if (shouldSendWhatsapp && clientInfo && (clientInfo.whatsapp || clientInfo.phone)) {
+      let phone = clientInfo.whatsapp || clientInfo.phone;
+      phone = phone.replace(/\D/g, '');
+      if (phone.startsWith('09')) phone = '963' + phone.substring(1);
+
+      const todayStr = new Date().toLocaleDateString('ar-EG');
+      const nextDateFormatted = nextDate ? new Date(nextDate).toLocaleDateString('ar-EG') : 'سيتم تحديده لاحقاً';
+
+      let message = `تحية طيبة وبعد\n`;
+      message += `نود إعلامك بآخر مستجدات الدعوى وفق التفاصيل التالية: \n`;
+      message += `_ رقم أساس الدعوى: ${c.base}${c.year ? '/' + c.year : ''}\n`;
+      message += `_ المحكمة: ${c.court || c.dept || ''} ${c.city || ''}\n\n`;
+      message += `*ملخص الجلسة:* \n`;
+      message += `عقدت جلسة الدعوى بتاريخ ${todayStr}م وقد تقرر تأجيل النظر في الدعوى وذلك بسبب: \n`;
+      message += `${reason || outcome || 'متابعة الإجراءات القانونية'}\n\n`;
+      message += `*موعد الجلسة القادمة:* \n`;
+      message += `تم تحديد الجلسة القادمة بتاريخ ${nextDateFormatted}م\n\n`;
+      message += `سنوافيكم بأي مستجدات تطرأ على الدعوى، وفي حال وجود أي استفسار لا تتردوا في التواصل معنا\n`;
+      message += `وتفضلوا بقبول فائق الاحترام\n`;
+      message += `دمتم بخير`;
+
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    alert("تم تحديث بيانات الجلسة وإبلاغ الموكل بنجاح! ✅");
+    closeGeneralCaseViewModal();
+  } catch (e) {
+    alert("خطأ أثناء الحفظ");
+  }
 };
 
 window.editGeneralCase = function(id) {
@@ -1144,6 +1405,7 @@ window.resetGeneralCaseForm = function() {
   document.getElementById('notation-trigger-row').style.display = 'none';
   document.getElementById('notation-fields').style.display = 'none';
   document.getElementById('tax-fields').style.display = 'none';
+  document.getElementById('separated-fields').style.display = 'none';
   document.querySelector('#case-management-section .action-btn').textContent = "حفظ القضية";
 };
 
@@ -1340,16 +1602,21 @@ window.saveSeparatedCase = async function() {
 };
 
 window.updateSeparatedCasesTable = function() {
+  const searchTerm = (document.getElementById('separated-case-search')?.value || '').toLowerCase();
   const tbody = document.getElementById('separated-cases-table-body');
   if (!tbody) return;
   tbody.innerHTML = '';
-  window.allSeparatedCases.sort((a,b) => b.timestamp - a.timestamp).forEach(c => {
+  window.allSeparatedCases.filter(c => 
+    (c.decisionNum && c.decisionNum.toLowerCase().includes(searchTerm)) ||
+    (normalizeArabic(c.client).toLowerCase().includes(searchTerm))
+  ).sort((a,b) => b.timestamp - a.timestamp).forEach(c => {
     tbody.innerHTML += `<tr>
-      <td><span style="color:var(--accent-gold); font-weight:bold;">${c.client}</span><br><small>${c.opponent}</small></td>
+      <td><a href="#" style="color:var(--accent-gold); font-weight:bold; text-decoration:none;" onclick="viewSeparatedCase('${c.id}'); return false;">${c.client}</a><br><small>${c.opponent}</small></td>
       <td>قرار: ${c.decisionNum}<br>أساس: ${c.base}</td>
       <td>${c.court}</td>
       <td style="color:var(--accent-green)">${c.result}</td>
       <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewSeparatedCase('${c.id}')">عرض 👁️</button>
         <button class="action-btn" style="background:#25D366" onclick="sendSeparatedWhatsApp('${c.id}')">واتساب 📱</button>
         <button class="action-btn" style="background:var(--accent-gold)" onclick="printSeparatedCase('${c.id}')">طباعة 🖨️</button>
         <button class="action-btn" style="background:var(--accent-blue)" onclick="editSeparatedCase('${c.id}')">تعديل</button>
@@ -1357,6 +1624,33 @@ window.updateSeparatedCasesTable = function() {
       </td>
     </tr>`;
   });
+};
+
+window.viewSeparatedCase = function(id) {
+  const c = window.allSeparatedCases.find(item => item.id === id);
+  if (!c) return;
+  window.currentViewingSepId = id;
+  
+  const content = document.getElementById('sep-case-details-content');
+  content.innerHTML = `
+    <div class="info-row"><span class="info-label">اسم الموكل:</span><span class="info-value">${c.client}</span></div>
+    <div class="info-row"><span class="info-label">اسم الخصم:</span><span class="info-value">${c.opponent || '-'}</span></div>
+    <div class="info-row"><span class="info-label">رقم القرار:</span><span class="info-value" style="color:var(--accent-gold); font-weight:bold;">${c.decisionNum}</span></div>
+    <div class="info-row"><span class="info-label">رقم الأساس:</span><span class="info-value">${c.base}</span></div>
+    <div class="info-row"><span class="info-label">المحكمة:</span><span class="info-value">${c.court || '-'}</span></div>
+    <div class="info-row"><span class="info-label">التصنيف:</span><span class="info-value">${c.category || 'قضية عامة'}</span></div>
+    <div class="info-row"><span class="info-label">تاريخ الفصل:</span><span class="info-value">${c.separationDate || '-'}</span></div>
+    <div class="info-row"><span class="info-label">تاريخ الأرشفة:</span><span class="info-value">${new Date(c.timestamp).toLocaleDateString('ar-EG')}</span></div>
+  `;
+
+  document.getElementById('sep-display-subject').textContent = c.subject || 'لم يتم تسجيل وصف لموضوع الدعوى.';
+  document.getElementById('sep-display-result').textContent = c.result || 'لم يتم تسجيل نتيجة القرار.';
+
+  document.getElementById('separated-case-view-modal').style.display = 'flex';
+};
+
+window.closeSeparatedCaseModal = function() {
+  document.getElementById('separated-case-view-modal').style.display = 'none';
 };
 
 window.sendSeparatedWhatsApp = function(id) {
@@ -1580,6 +1874,9 @@ window.loadClientPortalData = function(client) {
         <h4 style="color:${catColor}; margin-bottom:5px;">📦 ${c.category} | ${basicInfo}</h4>
         <div class="info-row"><span class="info-label">المحكمة/الدائرة:</span><span class="info-value">${c.dept || c.court || ''}</span></div>
         ${c.result ? `<div class="info-row"><span class="info-label">النتيجة:</span><span class="info-value" style="color:var(--accent-green)">${c.result}</span></div>` : ''}
+        ${c.lastSessionOutcome ? `<div class="info-row"><span class="info-label">ما تم في الجلسة:</span><span class="info-value">${c.lastSessionOutcome}</span></div>` : ''}
+        ${c.postponementReason ? `<div class="info-row"><span class="info-label">سبب التأجيل:</span><span class="info-value">${c.postponementReason}</span></div>` : ''}
+        ${c.nextSessionDate ? `<div class="info-row"><span class="info-label">الجلسة القادمة:</span><span class="info-value" style="color:var(--accent-gold)">${c.nextSessionDate}</span></div>` : ''}
       </div>`; 
   });
 

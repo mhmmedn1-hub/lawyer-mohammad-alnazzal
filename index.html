@@ -920,24 +920,6 @@
                 <th>إجراء</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>1055/أ/2024</td>
-                <td>أحمد العلي</td>
-                <td>مدني - عقاري</td>
-                <td>بداية دمشق</td>
-                <td><span class="status-badge status-active">نشطة</span></td>
-                <td><button class="action-btn" style="background:none; border:1px solid #333">تفاصيل</button></td>
-              </tr>
-              <tr>
-                <td>442/تجاري</td>
-                <td>شركة الرائد</td>
-                <td>تجاري - تحكيم</td>
-                <td>استئناف دمشق</td>
-                <td><span class="status-badge status-new">جديدة</span></td>
-                <td><button class="action-btn" style="background:none; border:1px solid #333">تفاصيل</button></td>
-              </tr>
-            </tbody>
             <tbody id="dashboard-updates-tbody"></tbody>
           </table>
         </div>
@@ -1081,6 +1063,10 @@
               <input type="checkbox" id="has-tax" onchange="toggleTaxFields()" style="width: 20px; height: 20px; cursor: pointer;">
               <label for="has-tax" style="margin: 0; cursor: pointer; color: #fff;">ضريبة المالية</label>
             </div>
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+              <input type="checkbox" id="is-separated" onchange="toggleSeparatedFields()" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="is-separated" style="margin: 0; cursor: pointer; color: #fff;">صدر قرار (فصلت)</label>
+            </div>
           </div>
 
           <div id="notation-fields" class="form-row" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
@@ -1092,6 +1078,12 @@
 
           <div id="tax-fields" class="form-row" style="display: none;">
             <div class="form-group"><label>رقم الضريبة</label><input type="text" id="tax-num" placeholder="أدخل رقم الضريبة المالية"></div>
+          </div>
+
+          <div id="separated-fields" class="form-row" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+            <div class="form-group"><label>رقم القرار</label><input type="text" id="gen-sep-decision-num" placeholder="رقم القرار"></div>
+            <div class="form-group"><label>تاريخ الفصل</label><input type="date" id="gen-sep-date"></div>
+            <div class="form-group"><label>النتيجة</label><input type="text" id="gen-sep-result" placeholder="نتيجة الحكم"></div>
           </div>
 
           <div class="form-group full-width" style="margin-top: 10px;">
@@ -1425,6 +1417,20 @@
             <div class="form-group"><label>مكان تنظيم الضبط</label><input type="text" id="inv-rec-place"></div>
             <div class="form-group"><label>رقم وارد النيابة العامة</label><input type="text" id="inv-pros-num"></div>
           </div>
+
+          <div class="form-row" style="align-items: center; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+              <input type="checkbox" id="inv-is-separated" onchange="toggleInvSeparatedFields()" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="inv-is-separated" style="margin: 0; cursor: pointer; color: #fff;">صدر قرار (فصلت)</label>
+            </div>
+          </div>
+
+          <div id="inv-separated-fields" class="form-row" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+            <div class="form-group"><label>رقم القرار</label><input type="text" id="inv-sep-decision-num" placeholder="رقم القرار"></div>
+            <div class="form-group"><label>تاريخ الفصل</label><input type="date" id="inv-sep-date"></div>
+            <div class="form-group"><label>النتيجة</label><input type="text" id="inv-sep-result" placeholder="نتيجة الحكم"></div>
+          </div>
+
           <div class="form-row" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
             <div class="form-group"><label style="color:var(--accent-blue)">🔔 ذكرني بتاريخ</label><input type="date" id="inv-remind-date"></div>
             <div class="form-group"><label style="color:var(--accent-blue)">📝 الإجراء المطلوب</label><input type="text" id="inv-remind-action" placeholder="مثلاً: تقديم طلب إخلاء سبيل"></div>
@@ -1518,6 +1524,20 @@
             <div class="form-group"><label>الجرم</label><input type="text" id="ref-crime" placeholder="نوع الجرم"></div>
             <div class="form-group"><label>موضوع الجرم</label><input type="text" id="ref-subject" placeholder="تفاصيل الجرم"></div>
           </div>
+
+          <div class="form-row" style="align-items: center; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+              <input type="checkbox" id="ref-is-separated" onchange="toggleRefSeparatedFields()" style="width: 20px; height: 20px; cursor: pointer;">
+              <label for="ref-is-separated" style="margin: 0; cursor: pointer; color: #fff;">صدر قرار (فصلت)</label>
+            </div>
+          </div>
+
+          <div id="ref-separated-fields" class="form-row" style="display: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 10px;">
+            <div class="form-group"><label>رقم القرار</label><input type="text" id="ref-sep-decision-num" placeholder="رقم القرار"></div>
+            <div class="form-group"><label>تاريخ الفصل</label><input type="date" id="ref-sep-date"></div>
+            <div class="form-group"><label>النتيجة</label><input type="text" id="ref-sep-result" placeholder="نتيجة الحكم"></div>
+          </div>
+
           <div class="form-row" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
             <div class="form-group"><label style="color:var(--accent-blue)">🔔 ذكرني بتاريخ</label><input type="date" id="ref-remind-date"></div>
             <div class="form-group"><label style="color:var(--accent-blue)">📝 الإجراء المطلوب</label><input type="text" id="ref-remind-action" placeholder="مثلاً: مراجعة قاضي الإحالة"></div>
@@ -1798,7 +1818,11 @@
         </form>
 
         <div style="margin-top: 40px;">
-          <h3 style="margin-bottom: 15px;">سجل القرارات المكتسبة</h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0">سجل القرارات المكتسبة</h3>
+            <input type="text" id="separated-case-search" placeholder="بحث برقم القرار أو اسم الموكل..." oninput="updateSeparatedCasesTable()" 
+                   style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; min-width: 300px; outline: none; font-size: 0.9rem;">
+          </div>
           <table class="data-table">
             <thead>
               <tr>
@@ -1845,6 +1869,73 @@
               <h3 style="margin-top:0; color: #ef4444;">🔒 ملاحظات المحامي الخاصة (سرية)</h3>
               <div id="p-client-private-notes" style="color: #fff; line-height: 1.6; white-space: pre-wrap; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- نافذة عرض تفاصيل القضية المفصولة (الأرشيف الكامل) -->
+      <div id="separated-case-view-modal" class="modal" onclick="closeSeparatedCaseModal()">
+        <div class="modal-content" style="background: #0f172a; width: 95%; max-width: 850px; padding: 30px; overflow-y: auto; max-height: 90vh; cursor: default; border: 2px solid var(--accent-gold);" onclick="event.stopPropagation()">
+          <span class="close-modal" onclick="closeSeparatedCaseModal()">&times;</span>
+          <h2 style="color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 15px; margin-top: 0; text-align: center;">🏛️ الأرشيف الكامل للقرار القضائي</h2>
+          
+          <div id="sep-case-details-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
+            <!-- سيتم ملؤه بواسطة JavaScript -->
+          </div>
+
+          <div style="margin-top: 25px; padding: 20px; border-radius: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+              <h3 style="margin-top:0; color: var(--accent-gold); border-bottom:1px solid rgba(212,175,55,0.1); padding-bottom:10px;">📝 موضوع الدعوى</h3>
+              <div id="sep-display-subject" style="color: #fff; line-height: 1.6; white-space: pre-wrap; font-size: 1rem;"></div>
+          </div>
+
+          <div style="margin-top: 25px; padding: 20px; border-radius: 15px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+              <h3 style="margin-top:0; color: var(--accent-green); border-bottom:1px solid rgba(16, 185, 129, 0.1); padding-bottom:10px;">⚖️ نتيجة القرار (المنطوق)</h3>
+              <div id="sep-display-result" style="color: #fff; font-weight: bold; font-size: 1.2rem; line-height: 1.6; white-space: pre-wrap;"></div>
+          </div>
+
+          <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+            <button class="btn-gold" onclick="window.printSeparatedCase(window.currentViewingSepId)">طباعة نسخة أرشيفية 🖨️</button>
+            <button class="btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="window.closeSeparatedCaseModal()">إغلاق الأرشيف</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- نافذة عرض وتحديث الجلسة للقضايا العامة -->
+      <div id="general-case-view-modal" class="modal" onclick="closeGeneralCaseViewModal()">
+        <div class="modal-content" style="background: #0f172a; width: 95%; max-width: 700px; padding: 30px; overflow-y: auto; max-height: 90vh; cursor: default; border: 2px solid var(--accent-blue);" onclick="event.stopPropagation()">
+          <span class="close-modal" onclick="closeGeneralCaseViewModal()">&times;</span>
+          <h2 id="view-case-title" style="color: var(--accent-blue); border-bottom: 2px solid var(--accent-blue); padding-bottom: 15px; margin-top: 0; text-align: center;">متابعة جلسات الدعوى</h2>
+          
+          <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px;">
+            <div><span class="info-label">رقم الأساس:</span> <span id="view-case-base" class="info-value"></span></div>
+            <div><span class="info-label">المحكمة:</span> <span id="view-case-court" class="info-value"></span></div>
+          </div>
+
+          <form class="case-form">
+            <div class="form-group">
+              <label>ما تم في جلسة اليوم (خلاصة الجلسة)</label>
+              <textarea id="case-session-outcome" rows="3" placeholder="اكتب ما حدث في جلسة اليوم..."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>موعد الجلسة القادمة</label>
+                <input type="date" id="case-next-date">
+              </div>
+              <div class="form-group">
+                <label>سبب التأجيل</label>
+                <input type="text" id="case-postpone-reason" placeholder="مثال: لتبليغ المدعى عليه">
+              </div>
+            </div>
+            
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; margin-top: 10px;">
+              <input type="checkbox" id="send-whatsapp-update" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent-green);">
+              <label for="send-whatsapp-update" style="margin: 0; cursor: pointer; color: #fff; font-weight: 600;">إرسال تحديث عبر واتساب للموكل 📱</label>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+              <button type="button" class="btn-gold" style="padding: 12px 30px;" onclick="saveCaseSessionUpdate()">حفظ وإبلاغ الموكل ✅</button>
+              <button type="button" class="btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="closeGeneralCaseViewModal()">إلغاء</button>
+            </div>
+          </form>
         </div>
       </div>
 
