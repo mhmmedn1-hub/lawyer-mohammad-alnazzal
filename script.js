@@ -2135,6 +2135,34 @@ window.openCaseStudyPreview = function() {
   document.getElementById('case-study-preview-modal').style.display = 'flex';
 };
 
+// Open case-study and show basics for a specific type (for الآن فقط شرعية)
+window.openCaseStudyPreviewAndBasics = function(studyType) {
+  if (!studyType) studyType = 'شرعية';
+
+  // Only 'شرعية' is implemented with existing form fields.
+  if (studyType !== 'شرعية') {
+    alert('تم تنفيذ نموذج دراسة الدعوى الشرعية فقط حالياً.');
+    studyType = 'شرعية';
+  }
+
+  // Ensure the case-study form container exists and scroll it into view.
+  const wrapper = document.getElementById('case-study-form-wrapper');
+  const entryCard = document.getElementById('case-study-entry-card');
+  if (entryCard) entryCard.style.display = 'none';
+  if (wrapper) {
+    wrapper.style.display = 'block';
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Reset form for a fresh entry (except when editing)
+  if (typeof window.resetCaseStudyForm === 'function') window.resetCaseStudyForm();
+  if (document.getElementById('plaintiff-husband')) document.getElementById('plaintiff-husband').checked = true;
+  if (document.getElementById('plaintiff-wife')) document.getElementById('plaintiff-wife').checked = false;
+
+  openCaseStudyPreview();
+};
+
+
 window.closeCaseStudyPreviewModal = function() {
   document.getElementById('case-study-preview-modal').style.display = 'none';
 };
