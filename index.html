@@ -1891,6 +1891,86 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- بيانات عقد الزواج -->
+          <div style="margin-top: 18px;">
+            <div style="border: 1px solid rgba(212,175,55,0.18); border-radius: 18px; padding: 18px; background: rgba(212,175,55,0.04);">
+              <h3 style="margin:0 0 12px; color: var(--accent-gold);">بيانات عقد الزواج</h3>
+
+              <table class="data-table" style="margin-top:0; font-size:0.95rem;">
+                <thead>
+                  <tr>
+                    <th>الأساس</th>
+                    <th>الصحيفة</th>
+                    <th>الأساس</th>
+                    <th>رقم القرار</th>
+                    <th>الأساس</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input id="marriage-base" type="text" placeholder="أساس"></td>
+                    <td><input id="marriage-record-page" type="text" placeholder="صحيفة"></td>
+                    <td><input id="marriage-fundament" type="text" placeholder="الأساس"></td>
+                    <td><input id="marriage-decision-num" type="text" placeholder="رقم القرار"></td>
+                    <td><input id="marriage-court-base" type="text" placeholder="الأساس"></td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">
+                      <label style="color:var(--gray-silver); font-size:0.85rem; display:block; margin-bottom:6px;">النـوع</label>
+                      <input id="marriage-type" type="text" placeholder="نوع العقد">
+                    </td>
+                    <td colspan="3">
+                      <label style="color:var(--gray-silver); font-size:0.85rem; display:block; margin-bottom:6px;">التاريخ</label>
+                      <input id="marriage-date" type="date" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- بيانات المهر -->
+          <div style="margin-top: 18px;">
+            <div style="border: 1px solid rgba(16,185,129,0.18); border-radius: 18px; padding: 18px; background: rgba(16,185,129,0.04);">
+              <h3 style="margin:0 0 12px; color: var(--accent-green);">بيانات المهر</h3>
+
+              <table class="data-table" style="margin-top:0; font-size:0.95rem;">
+                <thead>
+                  <tr>
+                    <th>مقدار المهر</th>
+                    <th>المقدم</th>
+                    <th>المؤخر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input id="dowry-amount" type="number" step="0.01" placeholder="مقدار المهر"></td>
+                    <td>
+                      <div style="display:grid; gap:8px;">
+                        <input id="dowry-advance" type="number" step="0.01" placeholder="المهر المقدم">
+                        <select id="dowry-advance-status" style="height:42px;">
+                          <option value="" selected disabled>قبض/غير قبض (المقدم)</option>
+                          <option value="مقبوض">مقبوض</option>
+                          <option value="غير مقبوض">غير مقبوض</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                      <div style="display:grid; gap:8px;">
+                        <input id="dowry-deferred" type="number" step="0.01" placeholder="المهر المؤخر">
+                        <select id="dowry-deferred-status" style="height:42px;">
+                          <option value="" selected disabled>قبض/غير قبض (المؤخر)</option>
+                          <option value="مقبوض">مقبوض</option>
+                          <option value="غير مقبوض">غير مقبوض</option>
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1898,6 +1978,7 @@
 
               <div style="border: 1px solid rgba(59,130,246,0.18); border-radius: 16px; padding: 16px; background: rgba(59,130,246,0.04);">
                 <h3 style="margin:0 0 12px; color: var(--accent-blue);">تفاصيل إضافية</h3>
+
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                   <div style="display:grid; gap: 10px;">
