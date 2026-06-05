@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { firebaseConfig } from "./lib/firebase-config.js";
 
 // Initialize Firebase
@@ -20,6 +20,7 @@ window.allPotentialClients = [];
 window.allSeparatedCases = [];
 window.allAgencies = [];
 window.allGeneralCases = [];
+window.allCaseStudies = [];
 window.currentViewingSepId = null;
 window.currentViewingCaseId = null;
 window.currentViewingCaseType = null;
@@ -34,7 +35,33 @@ const eyeOffIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 // Helper functions
 window.normalizeArabic = function(text) {
   if (!text) return "";
-  return text.trim().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ');
+  return text.toString()
+    .trim()
+    .replace(/[\u064B-\u0652\u0670\u0674\u06D6-\u06ED]/g, '') // remove Arabic diacritics
+    .replace(/ـ/g, '') // remove tatweel
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ');
+};
+
+window.normalizeLoginValue = function(value) {
+  if (!value) return '';
+  return value.toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670\u0674\u06D6-\u06ED]/g, '')
+    .replace(/ـ/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[\u0660-\u0669]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0660))
+    .replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z0-9]/g, '');
 };
 
 window.togglePasswordVisibility = function(inputId, iconEl) {
@@ -120,6 +147,11 @@ function setupFirebaseListeners() {
     updateSeparatedCasesTable();
     if(window.currentClient) loadClientPortalData(window.currentClient);
   });
+  onSnapshot(collection(db, "caseStudies"), (snap) => {
+    window.allCaseStudies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateCaseStudiesTable();
+    if(window.currentClient) loadClientPortalData(window.currentClient);
+  });
 }
 
 // Login functions
@@ -128,10 +160,18 @@ window.handleLawyerLogin = function() {
   const passVal = document.getElementById('lawyer-pass').value.trim();
   const remember = document.getElementById('lawyer-remember').checked;
 
-  const cleanInput = normalizeArabic(userVal).replace(/\s+/g, '');
-  const cleanTarget = normalizeArabic("محمد النزال").replace(/\s+/g, '');
+  const normalizedInput = normalizeLoginValue(userVal);
+  const validLawyerNames = [
+    'محمدالنزال', 'محمالنزال', 'محمد', 'النزال',
+    'mohammad', 'mohammadalnazzal', 'alnazzal', 'admin',
+    'محمدالنزال', 'محمالنزال'
+  ];
 
-  if ((cleanInput === cleanTarget || userVal.toLowerCase() === "admin") && passVal === "6503536") {
+  const matchesSpecialCase = normalizedInput.includes('محم') && normalizedInput.includes('النزال');
+  const isLawyerUser = validLawyerNames.includes(normalizedInput) || matchesSpecialCase || normalizedInput === 'admin';
+  const isCorrectPassword = passVal === '6503536';
+
+  if (isLawyerUser && isCorrectPassword) {
     if (remember) {
       localStorage.setItem('lawyer_user', userVal);
       localStorage.setItem('lawyer_pass', passVal);
@@ -142,17 +182,37 @@ window.handleLawyerLogin = function() {
       localStorage.setItem('lawyer_remember', 'false');
     }
     document.body.classList.add('in-dashboard');
+    document.getElementById('login-page').style.display = 'none';
     showSection('dashboard-overview-section');
   } else {
-    alert("خطأ في بيانات الدخول. يرجى التأكد من صحة اسم المستخدم وكلمة المرور.");
+    const debugUser = userVal || '(فارغ)';
+    const debugPass = passVal ? '●●●●●●●●' : '(فارغ)';
+    console.warn('Failed lawyer login', { debugUser, debugPass, normalizedInput });
+    alert('خطأ في بيانات الدخول. يرجى التأكد من صحة اسم المستخدم وكلمة المرور.');
   }
 };
 
 window.handleClientLogin = function() {
-  const user = document.getElementById('client-user').value.trim().toLowerCase();
-  const pass = document.getElementById('client-pass').value.trim();
+  const rawUserInput = document.getElementById('client-user').value;
+  const passInput = document.getElementById('client-pass').value.trim();
+  const userInput = normalizeLoginValue(rawUserInput);
 
-  const client = window.allClients.find(c => c.username.toLowerCase() === user && c.password === pass);
+  if (window.allClients.length === 0) {
+    alert('لم تُحمَّل بيانات الموكلين بعد. يرجى الانتظار قليلاً وإعادة المحاولة.');
+    return;
+  }
+
+  const client = window.allClients.find(c => {
+    const username = normalizeLoginValue(c.username);
+    const fullname = normalizeLoginValue(c.fullname);
+    const email = normalizeLoginValue(c.email);
+    const phone = normalizeLoginValue(c.phone);
+    const fileNumber = normalizeLoginValue(c.fileNumber);
+    const clientId = normalizeLoginValue(c.id);
+
+    const matchesUser = [username, fullname, email, phone, fileNumber, clientId].some(value => value && value === userInput);
+    return matchesUser && c.password === passInput;
+  });
 
   if (client) {
     window.currentClient = client;
@@ -161,7 +221,7 @@ window.handleClientLogin = function() {
     document.getElementById('display-client-name').textContent = client.fullname;
     loadClientPortalData(client);
   } else {
-    alert("خطأ في بيانات الموكل. تأكد من أن المحامي قد أنشأ لك حساباً.");
+    alert('خطأ في بيانات الموكل. تأكد من اسم المستخدم أو رقم الملف وكلمة المرور.');
   }
 };
 
@@ -508,6 +568,19 @@ window.updateInvestigationTable = function() {
   });
 };
 
+window.populateViewCaseSummary = function(details) {
+  document.getElementById('view-case-opponent').textContent = details.opponent || '-';
+  document.getElementById('view-case-client-role').textContent = details.clientRole || '-';
+  document.getElementById('view-case-client-status').textContent = details.clientStatus || '-';
+  document.getElementById('view-case-opponent-role').textContent = details.opponentRole || '-';
+  document.getElementById('view-case-opponent-status').textContent = details.opponentStatus || '-';
+  document.getElementById('view-case-type').textContent = details.caseType || '-';
+  document.getElementById('view-case-crime').textContent = details.crime || details.subject || '-';
+  document.getElementById('view-case-action-next').textContent = details.actionNext || details.remindAction || '-';
+  document.getElementById('view-case-remind-date').textContent = details.remindDate || '-';
+  document.getElementById('view-case-notes').textContent = details.notes || '-';
+};
+
 window.viewInvestigationCase = function(id) {
   const c = window.allInvestigations.find(item => item.id === id);
   if (!c) return;
@@ -517,11 +590,22 @@ window.viewInvestigationCase = function(id) {
   document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل (تحقيق): ${c.client}`;
   document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
   document.getElementById('view-case-court').textContent = c.dept;
-  
   document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
   document.getElementById('case-next-date').value = c.nextSessionDate || '';
   document.getElementById('case-postpone-reason').value = c.postponementReason || '';
-
+  document.getElementById('case-session-update-section').style.display = 'block';
+  window.populateViewCaseSummary({
+    opponent: c.opponent,
+    clientRole: c.clientRole,
+    clientStatus: c.clientStatus,
+    opponentRole: c.opponentRole,
+    opponentStatus: c.opponentStatus,
+    caseType: 'تحقيق',
+    crime: c.crime,
+    actionNext: c.remindAction,
+    remindDate: c.remindDate,
+    notes: c.subject
+  });
   document.getElementById('general-case-view-modal').style.display = 'flex';
 };
 
@@ -678,11 +762,22 @@ window.viewReferralCase = function(id) {
   document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل (إحالة): ${c.client}`;
   document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
   document.getElementById('view-case-court').textContent = c.dept;
-  
   document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
   document.getElementById('case-next-date').value = c.nextSessionDate || '';
   document.getElementById('case-postpone-reason').value = c.postponementReason || '';
-
+  document.getElementById('case-session-update-section').style.display = 'block';
+  window.populateViewCaseSummary({
+    opponent: c.opponent,
+    clientRole: c.clientRole,
+    clientStatus: c.clientStatus,
+    opponentRole: c.opponentRole,
+    opponentStatus: c.opponentStatus,
+    caseType: 'إحالة',
+    crime: c.crime,
+    actionNext: c.remindAction,
+    remindDate: c.remindDate,
+    notes: c.subject
+  });
   document.getElementById('general-case-view-modal').style.display = 'flex';
 };
 
@@ -1271,11 +1366,50 @@ window.viewGeneralCase = function(id) {
   document.getElementById('view-case-title').textContent = `متابعة جلسات الموكل: ${c.client}`;
   document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
   document.getElementById('view-case-court').textContent = c.court;
-  
   document.getElementById('case-session-outcome').value = c.lastSessionOutcome || '';
   document.getElementById('case-next-date').value = c.nextSessionDate || '';
   document.getElementById('case-postpone-reason').value = c.postponementReason || '';
+  document.getElementById('case-session-update-section').style.display = 'block';
+  window.populateViewCaseSummary({
+    opponent: c.opponent,
+    clientRole: c.clientRole,
+    clientStatus: c.clientStatus,
+    opponentRole: c.opponentRole,
+    opponentStatus: c.opponentStatus,
+    caseType: c.type || 'عامة',
+    crime: c.crime || c.subject,
+    actionNext: c.actionNext || c.remindAction,
+    remindDate: c.remindDate,
+    notes: c.notes
+  });
+  document.getElementById('general-case-view-modal').style.display = 'flex';
+};
 
+window.viewExecutionCase = function(id) {
+  const c = window.allExecutions.find(item => item.id === id);
+  if (!c) return;
+  window.currentViewingCaseId = id;
+  window.currentViewingCaseType = 'execution';
+
+  document.getElementById('view-case-title').textContent = `متابعة ملف التنفيذ: ${c.client}`;
+  document.getElementById('view-case-base').textContent = `${c.base}/${c.year}`;
+  document.getElementById('view-case-court').textContent = c.type || c.court || '';
+  document.getElementById('case-session-outcome').value = c.notes || '';
+  document.getElementById('case-next-date').value = c.remindDate || '';
+  document.getElementById('case-postpone-reason').value = c.actionNext || '';
+  document.getElementById('case-session-update-section').style.display = 'block';
+  window.populateViewCaseSummary({
+    opponent: c.opponent,
+    clientRole: c.clientRole,
+    clientStatus: '',
+    opponentRole: c.opponentRole,
+    opponentStatus: '',
+    caseType: 'تنفيذ',
+    crime: c.notes,
+    actionNext: c.actionNext,
+    remindDate: c.remindDate,
+    notes: c.notes
+  });
   document.getElementById('general-case-view-modal').style.display = 'flex';
 };
 
@@ -1526,8 +1660,9 @@ window.viewClientProfile = function(id) {
   const exeCases = window.allExecutions.filter(filterByClient).map(c => ({...c, cat: 'تنفيذ', base: `${c.base}/${c.year}`}));
   const genCases = window.allGeneralCases.filter(filterByClient).map(c => ({...c, cat: 'عامة', base: `${c.base}/${c.year}`}));
   const sepCases = window.allSeparatedCases.filter(filterByClient).map(c => ({...c, cat: 'مفصولة', base: `قرار: ${c.decisionNum}`}));
+  const studyCases = window.allCaseStudies.filter(filterByClient).map(c => ({...c, cat: 'دراسة شرعية', base: c.date || '', year: '', dept: c.court || ''}));
   
-  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases];
+  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases, ...studyCases];
   
   let casesHtml = '';
   if (allMyCases.length === 0) {
@@ -1624,6 +1759,420 @@ window.updateSeparatedCasesTable = function() {
       </td>
     </tr>`;
   });
+};
+
+window.generateCaseStudyPreviewHtml = function(data) {
+  return `
+    <div style="direction:rtl; font-family:Tahoma; color:#fff; line-height:1.7;">
+      <h2 style="text-align:center; color:var(--accent-gold);">${data.title || 'دراسة الدعوى الشرعية'}</h2>
+      <div class="info-row"><span class="info-label">اسم الموكل:</span><span class="info-value">${data.client || '-'}</span></div>
+      <div class="info-row"><span class="info-label">اسم الخصم:</span><span class="info-value">${data.opponent || '-'}</span></div>
+      <div class="info-row"><span class="info-label">المحكمة / الدائرة:</span><span class="info-value">${data.court || '-'}</span></div>
+      <div class="info-row"><span class="info-label">تاريخ الدراسة:</span><span class="info-value">${data.date || '-'}</span></div>
+      <div class="info-row"><span class="info-label">الصفة:</span><span class="info-value">${data.clientRole || '-'}</span></div>
+      <div style="margin-top: 15px;"><strong>موضوع الدراسة:</strong><p>${data.subject || '-'}</p></div>
+      <div style="margin-top: 15px;"><strong>خلاصة وتوصيات:</strong><p>${data.summary || '-'}</p></div>
+      <div style="margin-top: 15px;"><strong>ملاحظات إضافية:</strong><p>${data.notes || '-'}</p></div>
+    </div>
+  `;
+};
+
+window.saveCaseStudy = async function() {
+  const spouseInfo = gatherSpouseData();
+  const husbandName = spouseInfo.husband.name || '';
+  const wifeName = spouseInfo.wife.name || '';
+  const plaintiff = spouseInfo.plaintiff || 'husband';
+  const clientName = plaintiff === 'wife' ? wifeName : husbandName;
+  const opponentName = plaintiff === 'wife' ? husbandName : wifeName;
+  const title = 'دراسة الدعوى شرعية';
+
+  if (!husbandName && !wifeName) {
+    alert('يرجى إدخال بيانات الزوجين للمضي قدماً.');
+    return;
+  }
+
+  const clientObj = window.allClients.find(c => c.fullname === clientName);
+  const caseData = {
+    client: clientName || husbandName || wifeName,
+    clientId: clientObj ? clientObj.id : null,
+    clientRole: 'مدعي',
+    opponent: opponentName || '-',
+    title,
+    subject: '',
+    facts: '',
+    legal: '',
+    summary: '',
+    notes: '',
+    docxName: document.getElementById('case-study-docx-name')?.value || null,
+    docxData: document.getElementById('case-study-docx-data')?.value || null,
+    spouses: {
+      husband: spouseInfo.husband,
+      wife: spouseInfo.wife,
+      plaintiff
+    },
+    studyType: 'شرعية',
+    updatedAt: Date.now(),
+    timestamp: Date.now()
+  };
+
+  try {
+    if (window.editingId) {
+      await updateDoc(doc(db, 'caseStudies', window.editingId), caseData);
+      alert('تم تحديث دراسة الدعوى الشرعية بنجاح.');
+    } else {
+      const docRef = await addDoc(collection(db, 'caseStudies'), caseData);
+      if (clientObj) {
+        await updateDoc(doc(db, 'clients', clientObj.id), { caseStudyIds: arrayUnion(docRef.id) });
+      }
+      alert('تم حفظ دراسة الدعوى الشرعية ضمن معلومات الموكل والدعوى.');
+    }
+    resetCaseStudyForm();
+  } catch (error) {
+    console.error('Error saving case study:', error);
+    alert('حدث خطأ أثناء حفظ الدراسة.');
+  }
+};
+
+window.updateCaseStudiesTable = function() {
+  const searchTerm = (document.getElementById('case-study-search')?.value || '').toLowerCase();
+  const tbody = document.getElementById('case-study-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  window.allCaseStudies.filter(c =>
+    normalizeArabic(c.client).toLowerCase().includes(searchTerm) ||
+    normalizeArabic(c.opponent).toLowerCase().includes(searchTerm) ||
+    normalizeArabic(c.title).toLowerCase().includes(searchTerm)
+  ).sort((a,b) => b.timestamp - a.timestamp).forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.client}</td>
+      <td>${c.opponent || '-'}</td>
+      <td>${c.court || '-'}</td>
+      <td>${c.date || '-'}</td>
+      <td>${c.title}</td>
+      <td>
+        <button class="action-btn" style="background: var(--accent-gold); margin-left: 5px;" onclick="viewCaseStudy('${c.id}')">عرض</button>
+        <button class="action-btn" style="background: var(--accent-blue); margin-left: 5px;" onclick="editCaseStudy('${c.id}')">تعديل</button>
+        <button class="action-btn" style="background: #ef4444;" onclick="deleteCaseStudy('${c.id}')">حذف</button>
+      </td>
+    </tr>`;
+  });
+};
+
+window.resetCaseStudyForm = function() {
+  window.editingId = null;
+  document.getElementById('case-study-form').reset();
+  document.getElementById('plaintiff-husband').checked = true;
+  document.getElementById('plaintiff-wife').checked = false;
+};
+
+// Sync plaintiff selection; table display uses spouse data directly
+window.syncPlaintiffSelection = function() {
+  const selected = document.querySelector('input[name="case-plaintiff"]:checked')?.value;
+  if (!selected) return;
+};
+
+// Gather spouse objects from the form
+function gatherSpouseData() {
+  const husband = {
+    name: document.getElementById('husband-name')?.value.trim() || null,
+    father: document.getElementById('husband-father')?.value.trim() || null,
+    mother: document.getElementById('husband-mother')?.value.trim() || null,
+    birth: document.getElementById('husband-birth')?.value.trim() || null,
+    nid: document.getElementById('husband-nid')?.value.trim() || null,
+    job: document.getElementById('husband-job')?.value.trim() || null,
+    phone: document.getElementById('husband-phone')?.value.trim() || null,
+    health: document.getElementById('husband-health')?.value.trim() || null,
+    finance: document.getElementById('husband-finance')?.value.trim() || null,
+    address: document.getElementById('husband-address')?.value.trim() || null
+  };
+  const wife = {
+    name: document.getElementById('wife-name')?.value.trim() || null,
+    father: document.getElementById('wife-father')?.value.trim() || null,
+    mother: document.getElementById('wife-mother')?.value.trim() || null,
+    birth: document.getElementById('wife-birth')?.value.trim() || null,
+    nid: document.getElementById('wife-nid')?.value.trim() || null,
+    job: document.getElementById('wife-job')?.value.trim() || null,
+    phone: document.getElementById('wife-phone')?.value.trim() || null,
+    health: document.getElementById('wife-health')?.value.trim() || null,
+    finance: document.getElementById('wife-finance')?.value.trim() || null,
+    address: document.getElementById('wife-address')?.value.trim() || null
+  };
+  const plaintiff = document.querySelector('input[name="case-plaintiff"]:checked')?.value || null;
+  return { husband, wife, plaintiff };
+}
+
+// Import .docx and map to form fields using Mammoth
+window.importCaseStudyDocx = async function(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const caseStudyDocxNameInput = document.getElementById('case-study-docx-name');
+  if (caseStudyDocxNameInput) caseStudyDocxNameInput.value = file.name;
+
+  // Read as data URL to store original file if needed
+  const dataUrl = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+  const caseStudyDocxDataInput = document.getElementById('case-study-docx-data');
+  if (caseStudyDocxDataInput) caseStudyDocxDataInput.value = dataUrl;
+
+  // Convert docx to HTML using mammoth (browser bundle loaded in head)
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({ arrayBuffer });
+    const html = result.value || '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const text = tmp.textContent || tmp.innerText || '';
+
+    const sections = extractSectionsFromText(text);
+
+    // Map extracted sections into form fields
+    if (sections.client) {
+      const el = document.getElementById('case-study-client');
+      if (el) el.value = sections.client;
+    }
+    if (sections.opponent) {
+      const el = document.getElementById('case-study-opponent');
+      if (el) el.value = sections.opponent;
+    }
+    if (sections.court) {
+      const el = document.getElementById('case-study-court');
+      if (el) el.value = sections.court;
+    }
+    if (sections.title) {
+      const el = document.getElementById('case-study-title');
+      if (el) el.value = sections.title;
+    }
+    if (sections.date) {
+      const el = document.getElementById('case-study-date');
+      if (el) el.value = sections.date;
+    }
+    if (sections.facts) {
+      const el = document.getElementById('case-study-facts');
+      if (el) el.value = sections.facts;
+    }
+    if (sections.legal) {
+      const el = document.getElementById('case-study-legal');
+      if (el) el.value = sections.legal;
+    }
+    if (sections.summary) {
+      const el = document.getElementById('case-study-summary');
+      if (el) el.value = sections.summary;
+    }
+    if (sections.notes) {
+      const el = document.getElementById('case-study-notes');
+      if (el) el.value = sections.notes;
+    }
+
+    // Fallback: put full text into subject if subject empty
+    const caseStudySubject = document.getElementById('case-study-subject');
+    if (caseStudySubject && !caseStudySubject.value.trim()) {
+      caseStudySubject.value = text.substring(0, 2000);
+    }
+
+    alert('تم استيراد ملف الـ .docx تلقائياً. يرجى مراجعة الحقول وتعديلها حسب الحاجة.');
+  } catch (err) {
+    console.error('Import docx error:', err);
+    alert('حدث خطأ أثناء تحويل الملف. تأكد أن الملف بصيغة DOCX صحيحة.');
+  }
+};
+
+// Heuristic extraction of Arabic-labeled sections from plain text
+function extractSectionsFromText(text) {
+  const sections = { title: null, client: null, opponent: null, court: null, date: null, facts: null, legal: null, summary: null, notes: null };
+  if (!text) return sections;
+
+  // Normalize line breaks
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // Join into single text for searches
+  const joined = lines.join('\n');
+
+  // Simple patterns
+  const findAfter = (keywords) => {
+    for (const kw of keywords) {
+      const idx = joined.indexOf(kw);
+      if (idx !== -1) {
+        const tail = joined.substring(idx + kw.length).trim();
+        const nextBreak = tail.indexOf('\n\n');
+        return nextBreak === -1 ? tail.trim() : tail.substring(0, nextBreak).trim();
+      }
+    }
+    return null;
+  };
+
+  sections.title = findAfter(['دراسة', 'عنوان الدراسة', 'عنوان:']) || lines[0] || null;
+  sections.client = findAfter(['اسم الموكل', 'الموكل', 'اسم الموكّل']) || null;
+  sections.opponent = findAfter(['اسم الخصم', 'الخصم']) || null;
+  sections.court = findAfter(['المحكمة', 'الدائرة', 'محكمة']) || null;
+  sections.date = findAfter(['تاريخ', 'التاريخ']) || null;
+  sections.facts = findAfter(['وقائع', 'وقائع القضية', 'الوقائع', 'الوقائع:']) || null;
+  sections.legal = findAfter(['الأساس', 'الأدلّة', 'الدعوى', 'الأدلّة:','الأساس الشرعي']) || null;
+  sections.summary = findAfter(['خلاصة', 'التوصيات', 'الاستنتاج']) || null;
+  sections.notes = findAfter(['ملاحظات', 'مراجع']) || null;
+
+  // If no structured sections, fallback to first paragraphs
+  if (!sections.facts && lines.length > 2) sections.facts = lines.slice(1,4).join('\n');
+  if (!sections.legal && lines.length > 4) sections.legal = lines.slice(4,7).join('\n');
+
+  return sections;
+}
+
+window.openCaseStudyForm = function() {
+  document.getElementById('case-study-entry-card').style.display = 'none';
+  document.getElementById('case-study-form-wrapper').style.display = 'block';
+  resetCaseStudyForm();
+  document.getElementById('plaintiff-husband').checked = true;
+  document.getElementById('plaintiff-wife').checked = false;
+  document.getElementById('case-study-form-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.viewCaseStudy = function(id) {
+  const c = window.allCaseStudies.find(item => item.id === id);
+  if (!c) return;
+  window.editingId = null;
+  const spouseData = c.spouses || {};
+  const husband = spouseData.husband || {};
+  const wife = spouseData.wife || {};
+  const plaintiff = spouseData.plaintiff || 'husband';
+
+  document.getElementById('husband-name').value = husband.name || '';
+  document.getElementById('husband-father').value = husband.father || '';
+  document.getElementById('husband-mother').value = husband.mother || '';
+  document.getElementById('husband-birth').value = husband.birth || '';
+  document.getElementById('husband-nid').value = husband.nid || '';
+  document.getElementById('husband-job').value = husband.job || '';
+  document.getElementById('husband-phone').value = husband.phone || '';
+  document.getElementById('husband-health').value = husband.health || '';
+  document.getElementById('husband-finance').value = husband.finance || '';
+  document.getElementById('husband-address').value = husband.address || '';
+
+  document.getElementById('wife-name').value = wife.name || '';
+  document.getElementById('wife-father').value = wife.father || '';
+  document.getElementById('wife-mother').value = wife.mother || '';
+  document.getElementById('wife-birth').value = wife.birth || '';
+  document.getElementById('wife-nid').value = wife.nid || '';
+  document.getElementById('wife-job').value = wife.job || '';
+  document.getElementById('wife-phone').value = wife.phone || '';
+  document.getElementById('wife-health').value = wife.health || '';
+  document.getElementById('wife-finance').value = wife.finance || '';
+  document.getElementById('wife-address').value = wife.address || '';
+
+  document.getElementById('plaintiff-husband').checked = plaintiff === 'husband';
+  document.getElementById('plaintiff-wife').checked = plaintiff === 'wife';
+
+  openCaseStudyPreview();
+};
+
+window.editCaseStudy = function(id) {
+  const c = window.allCaseStudies.find(item => item.id === id);
+  if (!c) return;
+  window.editingId = id;
+  const spouseData = c.spouses || {};
+  const husband = spouseData.husband || {};
+  const wife = spouseData.wife || {};
+  const plaintiff = spouseData.plaintiff || 'husband';
+
+  document.getElementById('husband-name').value = husband.name || '';
+  document.getElementById('husband-father').value = husband.father || '';
+  document.getElementById('husband-mother').value = husband.mother || '';
+  document.getElementById('husband-birth').value = husband.birth || '';
+  document.getElementById('husband-nid').value = husband.nid || '';
+  document.getElementById('husband-job').value = husband.job || '';
+  document.getElementById('husband-phone').value = husband.phone || '';
+  document.getElementById('husband-health').value = husband.health || '';
+  document.getElementById('husband-finance').value = husband.finance || '';
+  document.getElementById('husband-address').value = husband.address || '';
+
+  document.getElementById('wife-name').value = wife.name || '';
+  document.getElementById('wife-father').value = wife.father || '';
+  document.getElementById('wife-mother').value = wife.mother || '';
+  document.getElementById('wife-birth').value = wife.birth || '';
+  document.getElementById('wife-nid').value = wife.nid || '';
+  document.getElementById('wife-job').value = wife.job || '';
+  document.getElementById('wife-phone').value = wife.phone || '';
+  document.getElementById('wife-health').value = wife.health || '';
+  document.getElementById('wife-finance').value = wife.finance || '';
+  document.getElementById('wife-address').value = wife.address || '';
+
+  document.getElementById('plaintiff-husband').checked = plaintiff === 'husband';
+  document.getElementById('plaintiff-wife').checked = plaintiff === 'wife';
+
+  document.querySelector('#case-study-form .action-btn').textContent = 'تحديث الدراسة';
+  document.getElementById('case-study-form-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.deleteCaseStudy = async function(id) {
+  if (!confirm('هل تريد حذف هذه الدراسة؟')) return;
+  await deleteDoc(doc(db, 'caseStudies', id));
+};
+
+window.openCaseStudyPreview = function() {
+  const spouseInfo = gatherSpouseData();
+  const husbandName = spouseInfo.husband.name || '';
+  const wifeName = spouseInfo.wife.name || '';
+  const plaintiff = spouseInfo.plaintiff || 'husband';
+  const clientName = plaintiff === 'wife' ? wifeName : husbandName;
+  const opponentName = plaintiff === 'wife' ? husbandName : wifeName;
+
+  const data = {
+    title: 'دراسة الدعوى الشرعية',
+    client: clientName,
+    opponent: opponentName,
+    court: '',
+    date: '',
+    clientRole: 'مدعي',
+    subject: '',
+    summary: '',
+    notes: '',
+    spouses: spouseInfo
+  };
+  document.getElementById('case-study-preview-content').innerHTML = window.generateCaseStudyPreviewHtml(data);
+  document.getElementById('case-study-preview-modal').style.display = 'flex';
+};
+
+window.closeCaseStudyPreviewModal = function() {
+  document.getElementById('case-study-preview-modal').style.display = 'none';
+};
+
+window.downloadCaseStudyAsWord = function() {
+  const content = document.getElementById('case-study-preview-content').innerHTML;
+  const header = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>';
+  const footer = '</body></html>';
+  const blob = new Blob([header + content + footer], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `دراسة_الدعوى_الشرعية.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.downloadCaseStudyAsPDF = function() {
+  const element = document.getElementById('case-study-preview-content');
+  const opt = {
+    margin: 0.5,
+    filename: `دراسة_الدعوى_الشرعية.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+};
+
+window.printCaseStudy = function() {
+  const content = document.getElementById('case-study-preview-content').innerHTML;
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`<html><head><title>طباعة دراسة الدعوى الشرعية</title><meta charset="utf-8"></head><body style="direction:rtl; font-family:Tahoma; padding:20px; background:#fff; color:#000;">${content}</body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
 };
 
 window.viewSeparatedCase = function(id) {
@@ -1736,8 +2285,16 @@ window.refreshDashboardData = function() {
   const refCases = window.allReferrals.map(c => ({...c, typeLabel: 'إحالة'}));
   const genCases = window.allGeneralCases.map(c => ({...c, typeLabel: 'عامة'}));
   const exeCases = window.allExecutions.map(c => ({...c, typeLabel: 'تنفيذ', dept: c.type, crime: 'أساس: ' + c.base}));
+  const sepCases = window.allSeparatedCases.map(c => ({
+    ...c,
+    typeLabel: 'مفصولة',
+    dept: c.court || '',
+    crime: '',
+    base: c.decisionNum || '',
+    year: ''
+  }));
 
-  const allCases = [...invCases, ...refCases, ...genCases, ...exeCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const allCases = [...invCases, ...refCases, ...genCases, ...exeCases, ...sepCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
   const stats = document.querySelectorAll('.stat-card .number');
   if (stats.length >= 4) {
@@ -1752,8 +2309,14 @@ window.refreshDashboardData = function() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  allCases.slice(0, 5).forEach(c => {
-    const statusClass = c.clientStatus === 'موقوف' ? 'status-new' : 'status-active';
+  const searchTerm = (document.getElementById('dashboard-update-search')?.value || '').toLowerCase();
+  const filteredCases = allCases.filter(c =>
+    normalizeArabic(c.client || '').toLowerCase().includes(searchTerm) ||
+    normalizeArabic(c.clientName || '').toLowerCase().includes(searchTerm)
+  );
+
+  filteredCases.slice(0, 5).forEach(c => {
+    const statusClass = (c.clientStatus === 'موقوف' || c.result === 'موقوف') ? 'status-new' : 'status-active';
     tbody.innerHTML += `
       <tr>
         <td>${c.base}/${c.year}</td>
@@ -1763,13 +2326,22 @@ window.refreshDashboardData = function() {
         <td><span class="status-badge ${statusClass}">${c.clientStatus || 'نشطة'}</span></td>
         <td>
           <button class="action-btn" style="background:none; border:1px solid var(--accent-blue); color:var(--accent-blue);"
-            onclick="showSection('${c.typeLabel === 'تحقيق' ? 'investigation-cases-section' : c.typeLabel === 'إحالة' ? 'referral-cases-section' : c.typeLabel === 'عامة' ? 'case-management-section' : 'execution-management-section'}')">
+            onclick="openDashboardCase('${c.typeLabel}', '${c.id}')">
             تفاصيل
           </button>
         </td>
       </tr>
     `;
   });
+};
+
+window.openDashboardCase = function(typeLabel, id) {
+  if (typeLabel === 'تحقيق') return viewInvestigationCase(id);
+  if (typeLabel === 'إحالة') return viewReferralCase(id);
+  if (typeLabel === 'عامة') return viewGeneralCase(id);
+  if (typeLabel === 'تنفيذ') return viewExecutionCase(id);
+  if (typeLabel === 'مفصولة') return viewSeparatedCase(id);
+  return showSection('case-management-section');
 };
 
 // Navigation and UI functions
@@ -1786,6 +2358,7 @@ window.showSection = function(sectionId) {
     'investigation-cases-section': updateInvestigationTable,
     'fees-management-section': () => { updateGlobalFeesSummary(); const cn = document.getElementById('fee-client-name').value; if(cn) updateFeesTable(cn); },
     'referral-cases-section': updateReferralTable,
+    'case-study-section': () => { resetCaseStudyForm(); updateCaseStudiesTable(); document.getElementById('case-study-entry-card').style.display = 'flex'; document.getElementById('case-study-form-wrapper').style.display = 'none'; },
     'sessions-management-section': () => { populateAllCasesDatalist(); updateSessionsTable(); },
     'execution-management-section': updateExecutionTable,
     'separated-cases-section': updateSeparatedCasesTable,
@@ -1854,8 +2427,9 @@ window.loadClientPortalData = function(client) {
   const exeCases = window.allExecutions.filter(filterByClient).map(c => ({...c, category: 'تنفيذ', dept: c.type}));
   const genCases = window.allGeneralCases.filter(filterByClient).map(c => ({...c, category: 'عامة'}));
   const sepCases = window.allSeparatedCases.filter(filterByClient).map(c => ({...c, category: 'مفصولة', base: `قرار رقم: ${c.decisionNum} / أساس: ${c.base}`, year: ''}));
+  const studyCases = window.allCaseStudies.filter(filterByClient).map(c => ({...c, category: 'دراسة شرعية', base: c.date || '', year: '', dept: c.court || ''}));
   
-  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases];
+  const allMyCases = [...invCases, ...refCases, ...exeCases, ...genCases, ...sepCases, ...studyCases];
 
   const caseContainer = document.getElementById('client-case-details');
   caseContainer.innerHTML = allMyCases.length ? '' : '<p style="text-align:center; color:var(--gray-silver);">لا توجد دعوى نشطة حالياً</p>';

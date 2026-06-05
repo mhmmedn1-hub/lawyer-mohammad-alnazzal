@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -673,11 +673,14 @@
     }
 
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme/pro.css">
   <!-- Scripts for Export Functionality -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 </head>
 <body>
   <div class="syrian-flag">
@@ -707,7 +710,7 @@
           <h2>لوحة المحامي</h2>
           <div class="login-form">
             <label>اسم المستخدم</label>
-            <input type="text" id="lawyer-user" placeholder="اسم المستخدم" onkeypress="if(event.key==='Enter') handleLawyerLogin()" />
+            <input type="text" id="lawyer-user" placeholder="محمد النزال" onkeypress="if(event.key==='Enter') handleLawyerLogin()" />
             <label>كلمة المرور</label>
             <div class="password-container">
               <input type="password" id="lawyer-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter') handleLawyerLogin()" />
@@ -876,15 +879,12 @@
       <div class="nav-item" data-target="agencies-management-section">📜 الوكالات</div>
       <div class="nav-item" data-target="investigation-cases-section">🔍 قضايا التحقيق</div>
       <div class="nav-item" data-target="referral-cases-section">🔃 قضايا الإحالة</div>
+      <div class="nav-item" data-target="case-study-section">📁 دراسة الدعوى</div>
       <div class="nav-item" data-target="sessions-management-section">📅 الجلسات القادمة</div>
       <div class="nav-item" data-target="execution-management-section">⚖️ التنفيذ</div>
       <div class="nav-item" data-target="separated-cases-section">📜 القضايا المفصولة</div>
       <div class="nav-item" data-target="messages-management-section">💬 رسائل الموكلين</div>
       <div class="nav-item" data-target="fees-management-section">💰 الأتعاب</div>
-      <div class="nav-item">📑 دراسة الدعوى</div>
-      <div class="nav-item">🔔 آخر الأخبار والتحديثات</div>
-      <div class="nav-item">📝 سجل النشاطات</div>
-      <div class="nav-item">🛡️ المسؤول</div>
       <div class="nav-item" style="margin-top: auto; color: #ff5e5e;" onclick="location.reload()">🚪 خروج</div>
     </aside>
 
@@ -906,8 +906,9 @@
         </div>
 
         <div class="panel-section">
-          <div style="display:block;">
+          <div style="display:block; margin-bottom: 15px; gap: 10px; align-items: center;">
             <h2 style="margin:0">آخر التحديثات</h2>
+            <input id="dashboard-update-search" list="clients-datalist" type="text" placeholder="بحث باسم الموكل..." oninput="refreshDashboardData()" style="padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.1); color: inherit; width: 260px; outline: none; font-size: 0.95rem;">
           </div>
           <table class="data-table">
             <thead>
@@ -934,7 +935,7 @@
         
         <!-- جلسات المحاكم اليوم -->
         <div style="margin-top: 30px;">
-          <h3 style="color:var(--accent-gold); border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">⚖️ جلسات المحاكم اليوم</h3>
+          <h3 style="color:var(--accent-gold); border-bottom:1px solid rgba(212,175,55,0.2); padding-bottom:5px;">📌 جلسات المحاكم اليوم</h3>
           <table class="data-table">
             <thead>
               <tr><th>الموكل / القضية</th><th>المكان</th><th>الملاحظات</th></tr>
@@ -1263,6 +1264,7 @@
                 <option value="" disabled selected>اختر النطاق</option>
                 <option value="عام">عام</option>
                 <option value="خاص">خاص</option>
+                <option value="خاص شرعي">خاص شرعي</option>
               </select>
             </div>
           </div>
@@ -1369,7 +1371,7 @@
             <div class="form-group">
               <label>الحالة</label>
               <select id="inv-client-status" required>
-                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="مخلى سبيله">مخلى سبيله</option>
                 <option value="موقوف">موقوف</option>
               </select>
             </div>
@@ -1484,7 +1486,7 @@
             <div class="form-group">
               <label>الحالة</label>
               <select id="ref-client-status" required>
-                <option value="إخلاء سبيل">إخلاء سبيل</option>
+                <option value="مخلى سبيله">مخلى سبيله</option>
                 <option value="موقوف">موقوف</option>
               </select>
             </div>
@@ -1570,6 +1572,77 @@
         </div>
       </section>
 
+      <!-- قسم دراسة الدعوى الشرعية -->
+      <section id="case-study-section" class="panel-section" style="display: none;">
+        <div style="text-align:center; margin-bottom: 30px;">
+          <h1 style="margin: 0; color: var(--accent-gold); font-size: 2.4rem; letter-spacing: 0.02em;">دراسة الدعوى الشرعية</h1>
+        </div>
+
+        <div id="case-study-form-wrapper">
+          <form class="case-form" id="case-study-form">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+              <div class="panel" style="padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                  <input type="radio" name="case-plaintiff" id="plaintiff-husband" value="husband" onchange="syncPlaintiffSelection()">
+                  <label for="plaintiff-husband" style="font-weight:700; font-size:1rem;">الزوج (المدّعي)</label>
+                </div>
+                <label>الاسم</label>
+                <input type="text" id="husband-name" placeholder="الاسم الكامل">
+                <label>اسم الأب</label>
+                <input type="text" id="husband-father" placeholder="اسم الأب">
+                <label>اسم الأم</label>
+                <input type="text" id="husband-mother" placeholder="اسم الأم">
+                <label>محل وتاريخ الولادة</label>
+                <input type="text" id="husband-birth" placeholder="مثال: دمشق - 01/01/1980">
+                <label>الرقم الوطني</label>
+                <input type="text" id="husband-nid" placeholder="الرقم الوطني">
+                <label>المهنة</label>
+                <input type="text" id="husband-job" placeholder="المهنة">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="husband-phone" placeholder="09xxxxxxxx">
+                <label>الحالة الصحية</label>
+                <input type="text" id="husband-health" placeholder="مثال: جيدة / مريضة">
+                <label>الوضع المالي</label>
+                <input type="text" id="husband-finance" placeholder="مثال: متوسط / جيد / متعثر">
+                <label>العنوان بالتفصيل</label>
+                <textarea id="husband-address" rows="2" placeholder="المدينة، الحي، شارع، رقم المنزل"></textarea>
+              </div>
+
+              <div class="panel" style="padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                  <input type="radio" name="case-plaintiff" id="plaintiff-wife" value="wife" onchange="syncPlaintiffSelection()">
+                  <label for="plaintiff-wife" style="font-weight:700; font-size:1rem;">الزوجة (المدّعي)</label>
+                </div>
+                <label>الاسم</label>
+                <input type="text" id="wife-name" placeholder="الاسم الكامل">
+                <label>اسم الأب</label>
+                <input type="text" id="wife-father" placeholder="اسم الأب">
+                <label>اسم الأم</label>
+                <input type="text" id="wife-mother" placeholder="اسم الأم">
+                <label>محل وتاريخ الولادة</label>
+                <input type="text" id="wife-birth" placeholder="مثال: دمشق - 01/01/1983">
+                <label>الرقم الوطني</label>
+                <input type="text" id="wife-nid" placeholder="الرقم الوطني">
+                <label>المهنة</label>
+                <input type="text" id="wife-job" placeholder="المهنة">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="wife-phone" placeholder="09xxxxxxxx">
+                <label>الحالة الصحية</label>
+                <input type="text" id="wife-health" placeholder="مثال: جيدة / مريضة">
+                <label>الوضع المالي</label>
+                <input type="text" id="wife-finance" placeholder="مثال: متوسط / جيد / متعثر">
+                <label>العنوان بالتفصيل</label>
+                <textarea id="wife-address" rows="2" placeholder="المدينة، الحي، شارع، رقم المنزل"></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:20px;">
+              <button type="button" class="action-btn" style="background: var(--accent-gold);" onclick="saveCaseStudy()">حفظ الدراسة</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
       <!-- قسم إدارة الجلسات (Sessions Management) -->
       <section id="sessions-management-section" class="panel-section" style="display: none;">
         <h2 style="margin-top: 0;">جدولة الجلسات القادمة</h2>
@@ -1612,10 +1685,10 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>القضية / الموكل</th>
+                <th>القطعة / الموكل</th>
                 <th>التاريخ والوقت</th>
-                <th>المكان</th>
-                <th>الملاحظات</th>
+                <th>مكان</th>
+                <th>ملاحظات</th>
                 <th>إجراء</th>
               </tr>
             </thead>
@@ -1876,7 +1949,7 @@
       <div id="separated-case-view-modal" class="modal" onclick="closeSeparatedCaseModal()">
         <div class="modal-content" style="background: #0f172a; width: 95%; max-width: 850px; padding: 30px; overflow-y: auto; max-height: 90vh; cursor: default; border: 2px solid var(--accent-gold);" onclick="event.stopPropagation()">
           <span class="close-modal" onclick="closeSeparatedCaseModal()">&times;</span>
-          <h2 style="color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 15px; margin-top: 0; text-align: center;">🏛️ الأرشيف الكامل للقرار القضائي</h2>
+          <h2 style="color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 15px; margin-top: 0; text-align: center;">الأرشيف الكامل للقرار القضائي</h2>
           
           <div id="sep-case-details-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
             <!-- سيتم ملؤه بواسطة JavaScript -->
@@ -1888,12 +1961,12 @@
           </div>
 
           <div style="margin-top: 25px; padding: 20px; border-radius: 15px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
-              <h3 style="margin-top:0; color: var(--accent-green); border-bottom:1px solid rgba(16, 185, 129, 0.1); padding-bottom:10px;">⚖️ نتيجة القرار (المنطوق)</h3>
+              <h3 style="margin-top:0; color: var(--accent-green); border-bottom:1px solid rgba(16, 185, 129, 0.1); padding-bottom:10px;">📝 نتيجة القرار (المنطوق)</h3>
               <div id="sep-display-result" style="color: #fff; font-weight: bold; font-size: 1.2rem; line-height: 1.6; white-space: pre-wrap;"></div>
           </div>
 
           <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
-            <button class="btn-gold" onclick="window.printSeparatedCase(window.currentViewingSepId)">طباعة نسخة أرشيفية 🖨️</button>
+            <button class="btn-gold" onclick="window.printSeparatedCase(window.currentViewingSepId)">طباعة نسخة أرشيفية</button>
             <button class="btn-outline" style="border-color:#ef4444; color:#ef4444;" onclick="window.closeSeparatedCaseModal()">إغلاق الأرشيف</button>
           </div>
         </div>
@@ -1910,7 +1983,20 @@
             <div><span class="info-label">المحكمة:</span> <span id="view-case-court" class="info-value"></span></div>
           </div>
 
-          <form class="case-form">
+          <div id="view-case-summary" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin-bottom:25px;">
+            <div class="info-row"><span class="info-label">الخصم:</span><span id="view-case-opponent" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">صفة الموكل:</span><span id="view-case-client-role" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">حالة الموكل:</span><span id="view-case-client-status" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">صفة الخصم:</span><span id="view-case-opponent-role" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">حالة الخصم:</span><span id="view-case-opponent-status" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">نوع القضية:</span><span id="view-case-type" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">الجريمة / الموضوع:</span><span id="view-case-crime" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">الإجراء التالي:</span><span id="view-case-action-next" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">تاريخ التذكير:</span><span id="view-case-remind-date" class="info-value"></span></div>
+            <div class="info-row"><span class="info-label">ملاحظات إضافية:</span><span id="view-case-notes" class="info-value"></span></div>
+          </div>
+
+          <form id="case-session-update-section" class="case-form">
             <div class="form-group">
               <label>ما تم في جلسة اليوم (خلاصة الجلسة)</label>
               <textarea id="case-session-outcome" rows="3" placeholder="اكتب ما حدث في جلسة اليوم..."></textarea>
@@ -1939,11 +2025,25 @@
         </div>
       </div>
 
+      <!-- نافذة معاينة دراسة الدعوى الشرعية -->
+      <div id="case-study-preview-modal" class="modal" onclick="closeCaseStudyPreviewModal()">
+        <div class="modal-content" style="background: #0f172a; width: 95%; max-width: 850px; padding: 30px; overflow-y: auto; max-height: 90vh; cursor: default; border: 2px solid var(--accent-gold);" onclick="event.stopPropagation()">
+          <span class="close-modal" onclick="closeCaseStudyPreviewModal()">&times;</span>
+          <h2 style="color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); padding-bottom: 15px; margin-top: 0; text-align: center;">معاينة دراسة الدعوى الشرعية</h2>
+          <div id="case-study-preview-content" style="color: #fff; line-height: 1.7; white-space: pre-wrap;"></div>
+          <div style="margin-top: 25px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <button class="btn-gold" onclick="downloadCaseStudyAsPDF()">تحميل PDF</button>
+            <button class="btn-gold" style="background:#0f172a;" onclick="downloadCaseStudyAsWord()">تحميل وورد</button>
+            <button class="btn-outline" style="border-color:#fff; color:#fff;" onclick="printCaseStudy()">طباعة</button>
+          </div>
+        </div>
+      </div>
+
       <!-- قسم رسائل الموكلين (Client Messages) -->
       <section id="messages-management-section" class="panel-section" style="display: none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
           <h2 style="margin:0;">💬 استفسارات ورسائل الموكلين</h2>
-          <button class="action-btn" style="background:#ef4444;" onclick="if(confirm('هل تريد حذف جميع الرسائل؟')){localStorage.removeItem('portal_messages'); updateMessagesTable();}">حذف الكل 🗑️</button>
+          <button class="action-btn" style="background:#ef4444;" onclick="if(confirm('هل تريد حذف جميع الرسائل؟')){localStorage.removeItem('portal_messages'); updateMessagesTable();}">حذف الكل</button>
         </div>
         
         <div style="margin-top: 20px;">
@@ -1985,3 +2085,5 @@
   <script type="module" src="script.js"></script>
 </body>
 </html>
+
+
