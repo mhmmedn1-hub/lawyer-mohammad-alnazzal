@@ -160,15 +160,30 @@ window.handleLawyerLogin = function() {
   const passVal = document.getElementById('lawyer-pass').value.trim();
   const remember = document.getElementById('lawyer-remember').checked;
 
+  // normalizeArabic برای توحيد الكتابة العربية (مثلاً: محمد النزال / محمدالنزال)
+  // normalizeLoginValue للتوحيد اللاتيني/الأرقام وما شابه.
+  const normalizedInputAr = normalizeArabic(userVal);
   const normalizedInput = normalizeLoginValue(userVal);
+
   const validLawyerNames = [
+    // Arabic variants
+    'محمدالنزال',
+    'محم النزال',
     'محمدالنزال',
     'محمالنزال',
     'محمد',
     'النزال',
+
+    // Arabic without spaces (post-normalization)
+    'محمدالنزال',
+    'النزال',
+
+    // Latin variants
     'mohammad',
     'mohammadalnazzal',
     'alnazzal',
+
+    // Admin shortcut
     'admin'
   ];
 
@@ -178,7 +193,13 @@ window.handleLawyerLogin = function() {
   // validLawyerNames.push('اسم_المحامي');
 
   const matchesSpecialCase = normalizedInput.includes('محم') && normalizedInput.includes('النزال');
-  const isLawyerUser = validLawyerNames.includes(normalizedInput) || matchesSpecialCase || normalizedInput === 'admin';
+
+  // دعم حالات الإدخال مع/بدون مسافات حتى بعد normalizeArabic
+  const isLawyerUser =
+    validLawyerNames.includes(normalizedInput) ||
+    validLawyerNames.includes(normalizedInputAr.replace(/\s+/g, '')) ||
+    matchesSpecialCase ||
+    normalizedInput === 'admin';
   const isCorrectPassword = passVal === '6503536';
 
   if (isLawyerUser && isCorrectPassword) {
