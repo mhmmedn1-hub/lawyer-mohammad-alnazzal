@@ -622,6 +622,70 @@ body.in-dashboard #lawyer-dashboard { display: grid; }
   background: radial-gradient(circle at top right, #0f172a, #020617);
 }
 
+/* ===============================
+   Modern shared components
+=============================== */
+
+/* Buttons (unified) */
+.btn-gold,
+.btn-outline,
+.action-btn{
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+
+.btn-outline{
+  background: transparent;
+}
+
+.action-btn{
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.btn-gold:focus,
+.btn-outline:focus,
+.action-btn:focus,
+.login-form button:focus,
+.data-table input:focus,
+.data-table textarea:focus,
+.case-form input:focus,
+.case-form textarea:focus,
+.case-form select:focus,
+.nav-item:focus{
+  outline: none;
+}
+
+:focus-visible{
+  box-shadow: 0 0 0 3px rgba(197,160,89,0.25) !important;
+  border-color: rgba(197,160,89,0.55) !important;
+}
+
+/* Client alert (moved from inline <style>) */
+.decision-alert{
+  background: linear-gradient(135deg, rgba(197,160,89,0.15) 0%, rgba(15,23,42,0.6) 100%);
+  border: 1px solid var(--accent-gold);
+  border-right: 5px solid var(--accent-gold);
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: slideDown 0.5s ease, pulse-gold 2s infinite;
+}
+
+@keyframes slideDown{
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-gold{
+  0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(212,175,55,0); }
+  100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+}
+
+
 .client-container { max-width: 1100px; margin: 0 auto; }
 
 .client-welcome-header {
