@@ -1789,11 +1789,17 @@ window.generateCaseStudyPreviewHtml = function(data) {
 
 window.saveCaseStudy = async function() {
   const spouseInfo = gatherSpouseData();
+  const marriageContractInfo = gatherMarriageContractData();
+  const childrenInfo = gatherChildrenData();
+  const disputeInfo = gatherDisputeData();
+  const claimsInfo = gatherClaimsData();
+  const mukhalaaInfo = gatherMukhalaaData();
   const husbandName = spouseInfo.husband.name || '';
   const wifeName = spouseInfo.wife.name || '';
   const plaintiff = spouseInfo.plaintiff || 'husband';
   const clientName = plaintiff === 'wife' ? wifeName : husbandName;
   const opponentName = plaintiff === 'wife' ? husbandName : wifeName;
+  const shariaCaseType = document.getElementById('sharia-case-type').value;
   const title = 'دراسة الدعوى شرعية';
 
   if (!husbandName && !wifeName) {
@@ -1808,6 +1814,7 @@ window.saveCaseStudy = async function() {
     clientRole: 'مدعي',
     opponent: opponentName || '-',
     title,
+    shariaCaseType,
     subject: '',
     facts: '',
     legal: '',
@@ -1820,6 +1827,11 @@ window.saveCaseStudy = async function() {
       wife: spouseInfo.wife,
       plaintiff
     },
+    marriageContract: marriageContractInfo,
+    children: childrenInfo,
+    dispute: disputeInfo,
+    claims: claimsInfo,
+    mukhalaa: mukhalaaInfo,
     studyType: 'شرعية',
     updatedAt: Date.now(),
     timestamp: Date.now()
@@ -1874,6 +1886,63 @@ window.resetCaseStudyForm = function() {
   document.getElementById('case-study-form').reset();
   document.getElementById('plaintiff-husband').checked = true;
   document.getElementById('plaintiff-wife').checked = false;
+  // Reset and hide marriage contract fields
+  document.getElementById('marriage-contract-type').value = '';
+  document.getElementById('marriage-sakk-fields').style.display = 'none';
+  document.getElementById('marriage-qarar-fields').style.display = 'none';
+  document.getElementById('marriage-ithbat-fields').style.display = 'none';
+  document.getElementById('marriage-file-upload').style.display = 'none';
+
+  // Reset sharia case type
+  document.getElementById('sharia-case-type').value = '';
+
+  // Hide mukhalaa fields
+  document.getElementById('mukhalaa-fields').style.display = 'none';
+
+
+  // Reset special conditions
+  document.getElementById('condition-work').checked = false;
+  document.getElementById('condition-housing').checked = false;
+  document.getElementById('condition-no-travel').checked = false;
+  document.getElementById('condition-special-toggle').checked = false;
+  document.getElementById('condition-special-text').value = '';
+  document.getElementById('condition-special-text-wrapper').style.display = 'none';
+
+  // Reset children table
+  populateChildrenTable([]);
+
+  // Reset dispute reasons
+  document.getElementById('dispute-start-date').value = '';
+  document.getElementById('dispute-nature').value = '';
+  document.getElementById('dispute-non-spending-date').value = '';
+  document.getElementById('dispute-violence').checked = false;
+  document.getElementById('dispute-medical-reports').checked = false;
+  document.getElementById('dispute-abuse').checked = false;
+  document.getElementById('dispute-abandonment').checked = false;
+  document.getElementById('dispute-family-intervention').checked = false;
+  document.getElementById('dispute-reconciliation').checked = false;
+  document.getElementById('dispute-evidence').checked = false;
+  document.getElementById('dispute-witnesses').checked = false;
+  document.getElementById('dispute-other-reasons').value = '';
+
+  // Reset claims
+  document.getElementById('claim-spousal-support').checked = false;
+  document.getElementById('claim-iddah-support').checked = false;
+  document.getElementById('claim-custody-fees').checked = false;
+  document.getElementById('claim-child-custody').checked = false;
+  document.getElementById('claim-child-support').checked = false;
+  document.getElementById('claim-gold').checked = false;
+  document.getElementById('claim-trousseau').checked = false;
+  document.getElementById('claim-travel-ban').checked = false;
+  document.getElementById('claim-revoke-custody').checked = false;
+  document.getElementById('claim-mahr').checked = false;
+  document.getElementById('claim-modify-mahr').checked = false;
+  document.getElementById('spousal-support-details').style.display = 'none';
+  document.getElementById('mahr-modification-details').style.display = 'none';
+  document.getElementById('claim-spousal-support-date').value = '';
+  document.getElementById('claim-spousal-support-type').value = 'كفاية';
+  // Also reset mahr modification fields if they have their own reset logic, but resetting the form should suffice.
+
 };
 
 // Sync plaintiff selection; table display uses spouse data directly
@@ -1910,6 +1979,163 @@ function gatherSpouseData() {
   };
   const plaintiff = document.querySelector('input[name="case-plaintiff"]:checked')?.value || null;
   return { husband, wife, plaintiff };
+}
+
+// Gather Mukhalaa data from the form
+function gatherMukhalaaData() {
+  const isMukhalaa = document.getElementById('sharia-case-type').value === 'تثبيت عقد مخالعة رضائية';
+  if (!isMukhalaa) return null;
+
+  return {
+    place: document.getElementById('mukhalaa-place').value.trim(),
+    date: document.getElementById('mukhalaa-date').value,
+    parties: document.getElementById('mukhalaa-parties').value.trim(),
+    consideration: document.getElementById('mukhalaa-consideration').value.trim(),
+    conditions: document.getElementById('mukhalaa-conditions').value.trim(),
+  };
+}
+
+// Gather marriage contract and mahr data from the form
+function gatherMarriageContractData() {
+  const contractType = document.getElementById('marriage-contract-type').value;
+  let contractDetails = {};
+
+  if (contractType === 'sakk') {
+    contractDetails = {
+      pageNum: document.getElementById('sakk-page-num').value,
+      recordNum: document.getElementById('sakk-record-num').value,
+      baseNum: document.getElementById('sakk-base-num').value,
+      date: document.getElementById('sakk-date').value,
+      place: document.getElementById('sakk-place').value,
+    };
+  } else if (contractType === 'qarar') {
+    contractDetails = {
+      decisionNum: document.getElementById('qarar-decision-num').value,
+      baseNum: document.getElementById('qarar-base-num').value,
+      court: document.getElementById('qarar-court').value,
+      city: document.getElementById('qarar-city').value,
+      date: document.getElementById('qarar-date').value,
+    };
+  } else if (contractType === 'ithbat') {
+    contractDetails = {
+      baseNum: document.getElementById('ithbat-base-num').value,
+      decisionNum: document.getElementById('ithbat-decision-num').value,
+      date: document.getElementById('ithbat-date').value,
+      place: document.getElementById('ithbat-place').value,
+    };
+  }
+
+  const mahr = {
+    muqaddam: document.getElementById('mahr-muqaddam').value,
+    muqaddamStatus: document.getElementById('mahr-muqaddam-status').value,
+    muakhar: document.getElementById('mahr-muakhar').value,
+    muakharStatus: document.getElementById('mahr-muakhar-status').value,
+  };
+
+  const conditions = {
+    work: document.getElementById('condition-work').checked,
+    housing: document.getElementById('condition-housing').checked,
+    noTravel: document.getElementById('condition-no-travel').checked,
+    specialToggle: document.getElementById('condition-special-toggle').checked,
+    specialText: document.getElementById('condition-special-text').value,
+  };
+
+  return {
+    type: contractType,
+    details: contractDetails,
+    mahr: mahr,
+    conditions: conditions,
+  };
+}
+
+// Gather children data from the table
+function gatherChildrenData() {
+  const children = [];
+  const tableBody = document.getElementById('children-table').querySelector('tbody');
+  const rows = tableBody.querySelectorAll('tr');
+
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input, select');
+    const name = inputs[0].value.trim();
+    
+    // Only save if a name is provided to avoid empty entries
+    if (name) {
+      const childData = {
+        name: name,
+        birthPlaceAndDate: inputs[1].value.trim(),
+        gender: inputs[2].value,
+        healthStatus: inputs[3].value.trim(),
+        notes: inputs[4].value.trim(),
+      };
+      children.push(childData);
+    }
+  });
+
+  return children;
+}
+
+// Gather dispute data from the form
+function gatherDisputeData() {
+  return {
+    startDate: document.getElementById('dispute-start-date').value,
+    nature: document.getElementById('dispute-nature').value.trim(),
+    nonSpendingDate: document.getElementById('dispute-non-spending-date').value,
+    hasViolence: document.getElementById('dispute-violence').checked,
+    hasMedicalReports: document.getElementById('dispute-medical-reports').checked,
+    hasAbuse: document.getElementById('dispute-abuse').checked,
+    hasAbandonment: document.getElementById('dispute-abandonment').checked,
+    hasFamilyIntervention: document.getElementById('dispute-family-intervention').checked,
+    hasReconciliationAttempts: document.getElementById('dispute-reconciliation').checked,
+    hasElectronicEvidence: document.getElementById('dispute-evidence').checked,
+    hasWitnesses: document.getElementById('dispute-witnesses').checked,
+    otherReasons: document.getElementById('dispute-other-reasons').value.trim(),
+  };
+}
+
+// Gather claims data from the form
+function gatherClaimsData() {
+  const mahrModificationDetails = {
+    marriageDate: document.getElementById('mod-mahr-marriage-date').value,
+    beauty: document.getElementById('mod-mahr-beauty').value.trim(),
+    education: document.getElementById('mod-mahr-education').value.trim(),
+    peers: document.getElementById('mod-mahr-peers').value.trim(),
+    husbandFinance: document.getElementById('mod-mahr-husband-finance').value.trim(),
+    housing: document.getElementById('mod-mahr-housing').value.trim(),
+    otherReasons: document.getElementById('mod-mahr-other-reasons').value.trim(),
+    hasWitnesses: document.getElementById('mod-mahr-witnesses').checked,
+  };
+
+  return {
+    spousalSupport: document.getElementById('claim-spousal-support').checked,
+    spousalSupportDate: document.getElementById('claim-spousal-support-date').value,
+    spousalSupportType: document.getElementById('claim-spousal-support-type').value,
+    iddahSupport: document.getElementById('claim-iddah-support').checked,
+    custodyFees: document.getElementById('claim-custody-fees').checked,
+    childCustody: document.getElementById('claim-child-custody').checked,
+    childSupport: document.getElementById('claim-child-support').checked,
+    gold: document.getElementById('claim-gold').checked,
+    trousseau: document.getElementById('claim-trousseau').checked,
+    travelBan: document.getElementById('claim-travel-ban').checked,
+    revokeCustody: document.getElementById('claim-revoke-custody').checked,
+    mahr: document.getElementById('claim-mahr').checked,
+    modifyMahr: document.getElementById('claim-modify-mahr').checked,
+    mahrModificationDetails: mahrModificationDetails,
+  };
+}
+
+// Populate children table from saved data
+function populateChildrenTable(children = []) {
+  const tableBody = document.getElementById('children-table').querySelector('tbody');
+  const rows = tableBody.querySelectorAll('tr');
+  rows.forEach((row, index) => {
+    const inputs = row.querySelectorAll('input, select');
+    const childData = children[index] || {};
+    inputs[0].value = childData.name || '';
+    inputs[1].value = childData.birthPlaceAndDate || '';
+    inputs[2].value = childData.gender || 'ذكر';
+    inputs[3].value = childData.healthStatus || '';
+    inputs[4].value = childData.notes || '';
+  });
 }
 
 // Import .docx and map to form fields using Mammoth
@@ -2048,6 +2274,14 @@ window.viewCaseStudy = function(id) {
   const spouseData = c.spouses || {};
   const husband = spouseData.husband || {};
   const wife = spouseData.wife || {};
+  const marriageContract = c.marriageContract || { details: {}, mahr: {} };
+  const contractDetails = marriageContract.details || {};
+  const children = c.children || [];
+  const claims = c.claims || {};
+  const dispute = c.dispute || {};
+  const shariaCaseType = c.shariaCaseType || '';
+  const mukhalaa = c.mukhalaa || null;
+  const conditions = marriageContract.conditions || {};
   const plaintiff = spouseData.plaintiff || 'husband';
 
   document.getElementById('husband-name').value = husband.name || '';
@@ -2074,6 +2308,103 @@ window.viewCaseStudy = function(id) {
 
   document.getElementById('plaintiff-husband').checked = plaintiff === 'husband';
   document.getElementById('plaintiff-wife').checked = plaintiff === 'wife';
+
+  // Populate sharia case type
+  document.getElementById('sharia-case-type').value = shariaCaseType;
+  toggleShariaCaseTypeFields(); // Show/hide fields based on type
+
+  // Populate Mukhalaa fields if they exist
+  if (mukhalaa) {
+    document.getElementById('mukhalaa-place').value = mukhalaa.place || '';
+    document.getElementById('mukhalaa-date').value = mukhalaa.date || '';
+    document.getElementById('mukhalaa-parties').value = mukhalaa.parties || '';
+    document.getElementById('mukhalaa-consideration').value = mukhalaa.consideration || '';
+    document.getElementById('mukhalaa-conditions').value = mukhalaa.conditions || '';
+  }
+
+
+  // Populate marriage contract and mahr fields
+  document.getElementById('marriage-contract-type').value = marriageContract.type || '';
+  toggleMarriageContractFields(); // Show the correct fields based on type
+
+  if (marriageContract.type === 'sakk') {
+    document.getElementById('sakk-page-num').value = contractDetails.pageNum || '';
+    document.getElementById('sakk-record-num').value = contractDetails.recordNum || '';
+    document.getElementById('sakk-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('sakk-date').value = contractDetails.date || '';
+    document.getElementById('sakk-place').value = contractDetails.place || '';
+  } else if (marriageContract.type === 'qarar') {
+    document.getElementById('qarar-decision-num').value = contractDetails.decisionNum || '';
+    document.getElementById('qarar-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('qarar-court').value = contractDetails.court || '';
+    document.getElementById('qarar-city').value = contractDetails.city || '';
+    document.getElementById('qarar-date').value = contractDetails.date || '';
+  } else if (marriageContract.type === 'ithbat') {
+    document.getElementById('ithbat-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('ithbat-decision-num').value = contractDetails.decisionNum || '';
+    document.getElementById('ithbat-date').value = contractDetails.date || '';
+    document.getElementById('ithbat-place').value = contractDetails.place || '';
+  }
+
+  document.getElementById('mahr-muqaddam').value = marriageContract.mahr.muqaddam || '';
+  document.getElementById('mahr-muqaddam-status').value = marriageContract.mahr.muqaddamStatus || 'مقبوض';
+  document.getElementById('mahr-muakhar').value = marriageContract.mahr.muakhar || '';
+  document.getElementById('mahr-muakhar-status').value = marriageContract.mahr.muakharStatus || 'غير مقبوض';
+
+  // Populate special conditions
+  document.getElementById('condition-work').checked = conditions.work || false;
+  document.getElementById('condition-housing').checked = conditions.housing || false;
+  document.getElementById('condition-no-travel').checked = conditions.noTravel || false;
+  document.getElementById('condition-special-toggle').checked = conditions.specialToggle || false;
+  document.getElementById('condition-special-text').value = conditions.specialText || '';
+  
+  // Trigger the display of the special text area if the toggle is checked
+  document.getElementById('condition-special-text-wrapper').style.display = (conditions.specialToggle) ? 'block' : 'none';
+
+  // Populate children table
+  populateChildrenTable(children);
+
+  // Populate claims
+  document.getElementById('claim-spousal-support').checked = claims.spousalSupport || false;
+  document.getElementById('claim-iddah-support').checked = claims.iddahSupport || false;
+  document.getElementById('claim-custody-fees').checked = claims.custodyFees || false;
+  document.getElementById('claim-child-custody').checked = claims.childCustody || false;
+  document.getElementById('claim-child-support').checked = claims.childSupport || false;
+  document.getElementById('claim-gold').checked = claims.gold || false;
+  document.getElementById('claim-trousseau').checked = claims.trousseau || false;
+  document.getElementById('claim-travel-ban').checked = claims.travelBan || false;
+  document.getElementById('claim-revoke-custody').checked = claims.revokeCustody || false;
+  document.getElementById('claim-mahr').checked = claims.mahr || false;
+  document.getElementById('claim-modify-mahr').checked = claims.modifyMahr || false;
+
+  document.getElementById('spousal-support-details').style.display = claims.spousalSupport ? 'grid' : 'none';
+  document.getElementById('claim-spousal-support-date').value = claims.spousalSupportDate || '';
+  document.getElementById('claim-spousal-support-type').value = claims.spousalSupportType || 'كفاية';
+
+  const modMahrDetails = claims.mahrModificationDetails || {};
+  document.getElementById('mahr-modification-details').style.display = claims.modifyMahr ? 'block' : 'none';
+  document.getElementById('mod-mahr-marriage-date').value = modMahrDetails.marriageDate || '';
+  document.getElementById('mod-mahr-beauty').value = modMahrDetails.beauty || '';
+  document.getElementById('mod-mahr-education').value = modMahrDetails.education || '';
+  document.getElementById('mod-mahr-peers').value = modMahrDetails.peers || '';
+  document.getElementById('mod-mahr-husband-finance').value = modMahrDetails.husbandFinance || '';
+  document.getElementById('mod-mahr-housing').value = modMahrDetails.housing || '';
+  document.getElementById('mod-mahr-other-reasons').value = modMahrDetails.otherReasons || '';
+  document.getElementById('mod-mahr-witnesses').checked = modMahrDetails.hasWitnesses || false;
+
+  // Populate dispute reasons
+  document.getElementById('dispute-start-date').value = dispute.startDate || '';
+  document.getElementById('dispute-nature').value = dispute.nature || '';
+  document.getElementById('dispute-non-spending-date').value = dispute.nonSpendingDate || '';
+  document.getElementById('dispute-violence').checked = dispute.hasViolence || false;
+  document.getElementById('dispute-medical-reports').checked = dispute.hasMedicalReports || false;
+  document.getElementById('dispute-abuse').checked = dispute.hasAbuse || false;
+  document.getElementById('dispute-abandonment').checked = dispute.hasAbandonment || false;
+  document.getElementById('dispute-family-intervention').checked = dispute.hasFamilyIntervention || false;
+  document.getElementById('dispute-reconciliation').checked = dispute.hasReconciliationAttempts || false;
+  document.getElementById('dispute-evidence').checked = dispute.hasElectronicEvidence || false;
+  document.getElementById('dispute-witnesses').checked = dispute.hasWitnesses || false;
+  document.getElementById('dispute-other-reasons').value = dispute.otherReasons || '';
 
   openCaseStudyPreview();
 };
@@ -2085,6 +2416,14 @@ window.editCaseStudy = function(id) {
   const spouseData = c.spouses || {};
   const husband = spouseData.husband || {};
   const wife = spouseData.wife || {};
+  const marriageContract = c.marriageContract || { details: {}, mahr: {} };
+  const contractDetails = marriageContract.details || {};
+  const children = c.children || [];
+  const claims = c.claims || {};
+  const dispute = c.dispute || {};
+  const shariaCaseType = c.shariaCaseType || '';
+  const mukhalaa = c.mukhalaa || null;
+  const conditions = marriageContract.conditions || {};
   const plaintiff = spouseData.plaintiff || 'husband';
 
   document.getElementById('husband-name').value = husband.name || '';
@@ -2111,6 +2450,102 @@ window.editCaseStudy = function(id) {
 
   document.getElementById('plaintiff-husband').checked = plaintiff === 'husband';
   document.getElementById('plaintiff-wife').checked = plaintiff === 'wife';
+
+  // Populate sharia case type
+  document.getElementById('sharia-case-type').value = shariaCaseType;
+  toggleShariaCaseTypeFields();
+
+  // Populate Mukhalaa fields if they exist
+  if (mukhalaa) {
+    document.getElementById('mukhalaa-place').value = mukhalaa.place || '';
+    document.getElementById('mukhalaa-date').value = mukhalaa.date || '';
+    document.getElementById('mukhalaa-parties').value = mukhalaa.parties || '';
+    document.getElementById('mukhalaa-consideration').value = mukhalaa.consideration || '';
+    document.getElementById('mukhalaa-conditions').value = mukhalaa.conditions || '';
+  }
+
+  // Populate marriage contract and mahr fields
+  document.getElementById('marriage-contract-type').value = marriageContract.type || '';
+  toggleMarriageContractFields(); // Show the correct fields based on type
+
+  if (marriageContract.type === 'sakk') {
+    document.getElementById('sakk-page-num').value = contractDetails.pageNum || '';
+    document.getElementById('sakk-record-num').value = contractDetails.recordNum || '';
+    document.getElementById('sakk-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('sakk-date').value = contractDetails.date || '';
+    document.getElementById('sakk-place').value = contractDetails.place || '';
+  } else if (marriageContract.type === 'qarar') {
+    document.getElementById('qarar-decision-num').value = contractDetails.decisionNum || '';
+    document.getElementById('qarar-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('qarar-court').value = contractDetails.court || '';
+    document.getElementById('qarar-city').value = contractDetails.city || '';
+    document.getElementById('qarar-date').value = contractDetails.date || '';
+  } else if (marriageContract.type === 'ithbat') {
+    document.getElementById('ithbat-base-num').value = contractDetails.baseNum || '';
+    document.getElementById('ithbat-decision-num').value = contractDetails.decisionNum || '';
+    document.getElementById('ithbat-date').value = contractDetails.date || '';
+    document.getElementById('ithbat-place').value = contractDetails.place || '';
+  }
+
+  document.getElementById('mahr-muqaddam').value = marriageContract.mahr.muqaddam || '';
+  document.getElementById('mahr-muqaddam-status').value = marriageContract.mahr.muqaddamStatus || 'مقبوض';
+  document.getElementById('mahr-muakhar').value = marriageContract.mahr.muakhar || '';
+  document.getElementById('mahr-muakhar-status').value = marriageContract.mahr.muakharStatus || 'غير مقبوض';
+
+  // Populate special conditions
+  document.getElementById('condition-work').checked = conditions.work || false;
+  document.getElementById('condition-housing').checked = conditions.housing || false;
+  document.getElementById('condition-no-travel').checked = conditions.noTravel || false;
+  document.getElementById('condition-special-toggle').checked = conditions.specialToggle || false;
+  document.getElementById('condition-special-text').value = conditions.specialText || '';
+  
+  // Trigger the display of the special text area if the toggle is checked
+  document.getElementById('condition-special-text-wrapper').style.display = (conditions.specialToggle) ? 'block' : 'none';
+
+  // Populate children table
+  populateChildrenTable(children);
+
+  // Populate claims
+  document.getElementById('claim-spousal-support').checked = claims.spousalSupport || false;
+  document.getElementById('claim-iddah-support').checked = claims.iddahSupport || false;
+  document.getElementById('claim-custody-fees').checked = claims.custodyFees || false;
+  document.getElementById('claim-child-custody').checked = claims.childCustody || false;
+  document.getElementById('claim-child-support').checked = claims.childSupport || false;
+  document.getElementById('claim-gold').checked = claims.gold || false;
+  document.getElementById('claim-trousseau').checked = claims.trousseau || false;
+  document.getElementById('claim-travel-ban').checked = claims.travelBan || false;
+  document.getElementById('claim-revoke-custody').checked = claims.revokeCustody || false;
+  document.getElementById('claim-mahr').checked = claims.mahr || false;
+  document.getElementById('claim-modify-mahr').checked = claims.modifyMahr || false;
+
+  document.getElementById('spousal-support-details').style.display = claims.spousalSupport ? 'grid' : 'none';
+  document.getElementById('claim-spousal-support-date').value = claims.spousalSupportDate || '';
+  document.getElementById('claim-spousal-support-type').value = claims.spousalSupportType || 'كفاية';
+
+  const modMahrDetails = claims.mahrModificationDetails || {};
+  document.getElementById('mahr-modification-details').style.display = claims.modifyMahr ? 'block' : 'none';
+  document.getElementById('mod-mahr-marriage-date').value = modMahrDetails.marriageDate || '';
+  document.getElementById('mod-mahr-beauty').value = modMahrDetails.beauty || '';
+  document.getElementById('mod-mahr-education').value = modMahrDetails.education || '';
+  document.getElementById('mod-mahr-peers').value = modMahrDetails.peers || '';
+  document.getElementById('mod-mahr-husband-finance').value = modMahrDetails.husbandFinance || '';
+  document.getElementById('mod-mahr-housing').value = modMahrDetails.housing || '';
+  document.getElementById('mod-mahr-other-reasons').value = modMahrDetails.otherReasons || '';
+  document.getElementById('mod-mahr-witnesses').checked = modMahrDetails.hasWitnesses || false;
+
+  // Populate dispute reasons
+  document.getElementById('dispute-start-date').value = dispute.startDate || '';
+  document.getElementById('dispute-nature').value = dispute.nature || '';
+  document.getElementById('dispute-non-spending-date').value = dispute.nonSpendingDate || '';
+  document.getElementById('dispute-violence').checked = dispute.hasViolence || false;
+  document.getElementById('dispute-medical-reports').checked = dispute.hasMedicalReports || false;
+  document.getElementById('dispute-abuse').checked = dispute.hasAbuse || false;
+  document.getElementById('dispute-abandonment').checked = dispute.hasAbandonment || false;
+  document.getElementById('dispute-family-intervention').checked = dispute.hasFamilyIntervention || false;
+  document.getElementById('dispute-reconciliation').checked = dispute.hasReconciliationAttempts || false;
+  document.getElementById('dispute-evidence').checked = dispute.hasElectronicEvidence || false;
+  document.getElementById('dispute-witnesses').checked = dispute.hasWitnesses || false;
+  document.getElementById('dispute-other-reasons').value = dispute.otherReasons || '';
 
   document.querySelector('#case-study-form .action-btn').textContent = 'تحديث الدراسة';
   document.getElementById('case-study-form-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2319,52 +2754,65 @@ window.deletePayment = async function(id, clientName) {
 
 // Dashboard functions
 window.refreshDashboardData = function() {
-  const invCases = window.allInvestigations.map(c => ({...c, typeLabel: 'تحقيق'}));
-  const refCases = window.allReferrals.map(c => ({...c, typeLabel: 'إحالة'}));
-  const genCases = window.allGeneralCases.map(c => ({...c, typeLabel: 'عامة'}));
-  const exeCases = window.allExecutions.map(c => ({...c, typeLabel: 'تنفيذ', dept: c.type, crime: 'أساس: ' + c.base}));
-  const sepCases = window.allSeparatedCases.map(c => ({
-    ...c,
-    typeLabel: 'مفصولة',
-    dept: c.court || '',
-    crime: '',
-    base: c.decisionNum || '',
-    year: ''
-  }));
-
-  const allCases = [...invCases, ...refCases, ...genCases, ...exeCases, ...sepCases].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const today = new Date().toISOString().split('T')[0];
+  const allCases = [...window.allInvestigations, ...window.allReferrals, ...window.allGeneralCases, ...window.allExecutions, ...window.allSeparatedCases];
 
   const stats = document.querySelectorAll('.stat-card .number');
   if (stats.length >= 4) {
     stats[0].textContent = allCases.length;
-    stats[1].textContent = allCases.filter(c => c.clientStatus === 'موقوف').length;
-    const today = new Date().toISOString().split('T')[0];
+    stats[1].textContent = [...window.allInvestigations, ...window.allReferrals].filter(c => c.clientStatus === 'موقوف').length;
     stats[2].textContent = window.allSessions.filter(s => s.date === today).length;
     stats[3].textContent = window.allClients.filter(c => !c.isArchived).length;
   }
 
   const tbody = document.getElementById('dashboard-updates-tbody');
   if (!tbody) return;
+
+  // بناء "مرآة العمل اليومية"
+  let dailyDigest = [];
+
+  // 1. جلسات اليوم
+  window.allSessions.filter(s => s.date === today).forEach(s => {
+    dailyDigest.push({ time: s.time || 'غير محدد', type: 'جلسة', subject: s.caseRef, location: s.court, notes: s.notes, raw: s });
+  });
+
+  // 2. متابعات التحقيق والإحالة لليوم
+  window.allInvestigations.filter(c => c.remindDate === today).forEach(c => {
+    dailyDigest.push({ time: 'متابعة', type: 'تحقيق', subject: c.client, location: c.dept, notes: c.remindAction, raw: c });
+  });
+  window.allReferrals.filter(c => c.remindDate === today).forEach(c => {
+    dailyDigest.push({ time: 'متابعة', type: 'إحالة', subject: c.client, location: c.dept, notes: c.remindAction, raw: c });
+  });
+
+  // 3. مواعيد اليوم
+  window.allPotentialClients.filter(p => p.date === today).forEach(p => {
+    dailyDigest.push({ time: p.time || 'غير محدد', type: 'موعد', subject: p.name, location: 'المكتب', notes: p.notes, raw: p });
+  });
+
+  // فرز حسب الوقت
+  dailyDigest.sort((a, b) => (a.time || "23:59").localeCompare(b.time || "23:59"));
+
   tbody.innerHTML = '';
+  if (dailyDigest.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--gray-silver); padding: 20px;">لا توجد تحديثات أو مهام لليوم.</td></tr>`;
+    return;
+  }
 
-  const searchTerm = (document.getElementById('dashboard-update-search')?.value || '').toLowerCase();
-  const filteredCases = allCases.filter(c =>
-    normalizeArabic(c.client || '').toLowerCase().includes(searchTerm) ||
-    normalizeArabic(c.clientName || '').toLowerCase().includes(searchTerm)
-  );
+  dailyDigest.forEach(item => {
+    let typeClass = 'status-active';
+    if (item.type === 'جلسة') typeClass = 'status-new';
+    if (item.type === 'موعد') typeClass = 'status-badge'; // Default badge
 
-  filteredCases.slice(0, 5).forEach(c => {
-    const statusClass = (c.clientStatus === 'موقوف' || c.result === 'موقوف') ? 'status-new' : 'status-active';
     tbody.innerHTML += `
       <tr>
-        <td>${c.base}/${c.year}</td>
-        <td style="font-weight:600;">${c.client}</td>
-        <td>${c.typeLabel} - ${c.crime || c.type || ''}</td>
-        <td>${c.dept || c.court || ''}</td>
-        <td><span class="status-badge ${statusClass}">${c.clientStatus || 'نشطة'}</span></td>
+        <td style="color:var(--accent-gold);">${item.time}</td>
+        <td><span class="status-badge ${typeClass}">${item.type}</span></td>
+        <td style="font-weight:600;">${item.subject}</td>
+        <td>${item.location}</td>
+        <td style="font-size:0.85rem; color:var(--gray-silver);">${item.notes || '-'}</td>
         <td>
           <button class="action-btn" style="background:none; border:1px solid var(--accent-blue); color:var(--accent-blue);"
-            onclick="openDashboardCase('${c.typeLabel}', '${c.id}')">
+            onclick="openDashboardItem('${item.type}', '${item.raw.id}')">
             تفاصيل
           </button>
         </td>
@@ -2373,13 +2821,13 @@ window.refreshDashboardData = function() {
   });
 };
 
-window.openDashboardCase = function(typeLabel, id) {
-  if (typeLabel === 'تحقيق') return viewInvestigationCase(id);
-  if (typeLabel === 'إحالة') return viewReferralCase(id);
-  if (typeLabel === 'عامة') return viewGeneralCase(id);
-  if (typeLabel === 'تنفيذ') return viewExecutionCase(id);
-  if (typeLabel === 'مفصولة') return viewSeparatedCase(id);
-  return showSection('case-management-section');
+window.openDashboardItem = function(type, id) {
+  if (type === 'جلسة') return showSection('sessions-management-section');
+  if (type === 'تحقيق') return viewInvestigationCase(id);
+  if (type === 'إحالة') return viewReferralCase(id);
+  if (type === 'موعد') return showSection('potential-clients-section');
+  // Fallback for other types if needed
+  return showSection('dashboard-overview-section');
 };
 
 // Navigation and UI functions
@@ -2390,6 +2838,7 @@ window.showSection = function(sectionId) {
   const loaders = {
     'dashboard-overview-section': refreshDashboardData,
     'daily-work-section': refreshDailyWorkData,
+    'agency-templates-section': () => {}, // No loader needed for this static section
     'potential-clients-section': updatePotentialClientsTable,
     'clients-management-section': updateClientsTable,
     'agencies-management-section': updateAgenciesTable,
@@ -2785,6 +3234,111 @@ window.printCaseReceipt = function(type, docId) {
     </html>
   `);
   printWindow.document.close();
+};
+
+// دالة لإظهار/إخفاء حقول عقد الزواج بناءً على الاختيار
+window.toggleMarriageContractFields = function() {
+  const type = document.getElementById('marriage-contract-type').value;
+  const sakkFields = document.getElementById('marriage-sakk-fields');
+  const qararFields = document.getElementById('marriage-qarar-fields');
+  const ithbatFields = document.getElementById('marriage-ithbat-fields');
+  const fileUpload = document.getElementById('marriage-file-upload');
+
+  // إخفاء جميع الحقول أولاً
+  sakkFields.style.display = 'none';
+  qararFields.style.display = 'none';
+  ithbatFields.style.display = 'none';
+  fileUpload.style.display = 'none';
+
+  if (type === 'sakk') sakkFields.style.display = 'grid';
+  else if (type === 'qarar') qararFields.style.display = 'grid';
+  else if (type === 'ithbat') ithbatFields.style.display = 'grid';
+
+  // إظهار حقل رفع الملف إذا تم اختيار أي نوع
+  if (type) fileUpload.style.display = 'block';
+};
+
+// Agency Template Generation
+window.generateAgencyText = function(type) {
+    const clientName = prompt("الرجاء إدخال اسم الموكل (الاسم الثلاثي):");
+    if (!clientName) return;
+
+    let opponentName = "";
+    if (type === 'sale') {
+        opponentName = prompt("الرجاء إدخال اسم الطرف الآخر في عقد البيع (البائع/المشتري):");
+        if (!opponentName) return;
+    }
+
+    let title = "";
+    let text = "";
+
+    switch (type) {
+        case 'divorce':
+            title = "وكالة خاصة بالمخالعة والطلاق والتفريق";
+            text = `أنا الموقع أدناه ${clientName}، أوكل المحامي الأستاذ محمد فايز النزال في إقامة دعوى مخالعة رضائية أو طلاق أو تفريق للشقاق، وتمثيلي في كافة الإجراءات المتعلقة بها أمام المحاكم الشرعية المختصة، وله الحق في الإقرار والإنكار والصلح والتحكيم وقبض المهر وتوابعه والتوقيع على كافة الأوراق والمستندات اللازمة، وله حق قبض المهر وتوابعه.`;
+            break;
+        case 'marriage':
+            title = "وكالة خاصة بتثبيت الزواج";
+            text = `أنا الموقع أدناه ${clientName}، أوكل المحامي الأستاذ محمد فايز النزال في إقامة دعوى تثبيت زواج وتمثيلي في كافة الإجراءات المتعلقة بها أمام المحاكم الشرعية المختصة، وله الحق في الإقرار والإنكار والصلح وتحديد المهر والتوقيع على كافة الأوراق والمستندات اللازمة، وله حق قبض المهر وتوابعه.`;
+            break;
+        case 'sale':
+            title = "وكالة خاصة بتثبيت البيع";
+            text = `أنا الموقع أدناه ${clientName}، أوكل المحامي الأستاذ محمد فايز النزال في إقامة دعوى تثبيت بيع العقار/المركبة... ضد السيد/ة ${opponentName}، وتمثيلي في كافة الإجراءات المتعلقة بها أمام المحاكم المختصة، وله الحق في الإقرار والإنكار والصلح والتوقيع على كافة الأوراق والمستندات اللازمة، وله حق قبض الثمن وتوابعه.`;
+            break;
+        case 'criminal':
+            title = "وكالة خاصة جزائية";
+            text = `أنا الموقع أدناه ${clientName}، أوكل المحامي الأستاذ محمد فايز النزال لتمثيلي في كافة القضايا الجزائية المقامة مني أو علي، وله الحق في تقديم الشكاوى والادعاءات الشخصية والمرافعة والمدافعة وتقديم الدفوع وطلبات إخلاء السبيل والكفالات والطعن في الأحكام بكافة طرق الطعن العادية والاستثنائية، وله حق قبض المبلغ المدعى به.`;
+            break;
+    }
+
+    document.getElementById('agency-template-title').textContent = title;
+    document.getElementById('agency-template-content').textContent = text;
+    document.getElementById('agency-template-modal').style.display = 'flex';
+};
+
+window.closeAgencyTemplateModal = function() {
+    document.getElementById('agency-template-modal').style.display = 'none';
+};
+
+window.copyAgencyText = function() {
+    const text = document.getElementById('agency-template-content').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("تم نسخ نص الوكالة بنجاح!");
+    }, () => {
+        alert("فشل نسخ النص.");
+    });
+};
+
+window.printAgencyText = function() {
+    const title = document.getElementById('agency-template-title').textContent;
+    const content = document.getElementById('agency-template-content').textContent;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>${title}</title>
+                <style>
+                    body { direction: rtl; font-family: 'Times New Roman', Times, serif; margin: 40px; font-size: 16pt; line-height: 1.8; }
+                    h1 { text-align: center; color: #333; }
+                    p { text-align: justify; }
+                </style>
+            </head>
+            <body>
+                <h1>${title}</h1>
+                <p>${content}</p>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+};
+
+// دالة لإظهار/إخفاء حقول المخالعة بناءً على نوع الدعوى الشرعية
+window.toggleShariaCaseTypeFields = function() {
+  const type = document.getElementById('sharia-case-type').value;
+  const mukhalaaFields = document.getElementById('mukhalaa-fields');
+  mukhalaaFields.style.display = (type === 'تثبيت عقد مخالعة رضائية') ? 'grid' : 'none';
 };
 
 // Send Tomorrow Session Reminders function

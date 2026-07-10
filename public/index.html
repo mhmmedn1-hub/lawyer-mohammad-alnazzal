@@ -7,6 +7,61 @@
   <style>
     @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
 
+    /* ===== عدالتنا (Emblem) ===== */
+    :root{
+      --justice-navy:#0B1B3A;
+      --justice-gold:#D4AF37;
+      --justice-silver:#94A3B8;
+      --justice-glass: rgba(255,255,255,0.035);
+      --justice-border: rgba(212,175,55,0.16);
+    }
+
+    .justice-emblem-wrap{
+      position: relative;
+      isolation: isolate;
+    }
+
+    /* خلفية إمرأة العدالة (بدون تغيير الميزان/العلم الحاليين) */
+    .justice-emblem-bg{
+      position:absolute;
+      inset:-30px;
+      z-index:-1;
+      pointer-events:none;
+      opacity: 1;
+      background:
+        radial-gradient(900px 420px at 15% 10%, rgba(212,175,55,0.18), transparent 55%),
+        radial-gradient(700px 360px at 85% 10%, rgba(148,163,184,0.16), transparent 55%),
+        radial-gradient(600px 320px at 60% 70%, rgba(59,130,246,0.12), transparent 50%),
+        linear-gradient(180deg, rgba(11,27,58,0.55), rgba(2,6,23,0.7));
+    }
+
+    .justice-emblem-bg::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='600'%20viewBox='0%200%20900%20600'%3E%3Cdefs%3E%3CradialGradient%20id='g'%20cx='50%25'%20cy='20%25'%20r='70%25'%3E%3Cstop%20offset='0%25'%20stop-color='%23D4AF37'%20stop-opacity='.35'/%3E%3Cstop%20offset='60%25'%20stop-color='%230B1B3A'%20stop-opacity='0'/%3E%3Cstop%20offset='100%25'%20stop-color='%230B1B3A'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='900'%20height='600'%20fill='url(%23g)'/%3E%3C!--%20Silhouette%20of%20Justice%20Woman%20--%3E%3Cg%20opacity='.14'%20fill='%23D4AF37'%3E%3Cpath%20d='M450%20140c-55%200-100%2036-100%2088%200%2054%2045%20100%20100%20100s100-46%20100-100c0-52-45-88-100-88Z'/%3E%3Cpath%20d='M355%20255c-45%2038-70%20100-70%20170v65c0%2040%2040%2070%2078%2055l87-40%2087%2040c38%2015%2078-15%2078-55v-65c0-70-25-132-70-170-25-20-65-40-110-40s-85%2020-110%2040Z'/%3E%3Cpath%20d='M360%20430c10%20125%2038%20165%2030%20195h160c-8-30%20+?%200'%20/%3E%3C/g%3E%3C!--%20No%20scales%20or%20flag%20icons%20here%20(kept%20as%20is)%20--%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position: center top;
+      background-size: 620px 420px;
+      filter: saturate(1.1) contrast(1.05);
+      transform: translateY(-10px);
+    }
+
+    .justice-emblem-fg{
+      position:absolute;
+      inset:0;
+      z-index:0;
+      pointer-events:none;
+    }
+
+    /* خلي بالك: لا نغطي المحتوى */
+    .justice-emblem-fg > *{
+      position:relative;
+      z-index:1;
+    }
+
+
     /* ===============================
        Case Study Icons (هيبة/احترافية)
     =============================== */
@@ -894,11 +949,18 @@
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 </head>
 <body>
-  <div class="syrian-flag">
-    <div class="flag-green"></div>
-    <div class="flag-white">★ ★ ★</div>
-    <div class="flag-black"></div>
+  <div class="justice-emblem-wrap">
+    <div class="justice-emblem-bg" aria-hidden="true"></div>
+
+    <div class="syrian-flag">
+      <div class="flag-green"></div>
+      <div class="flag-white">★ ★ ★</div>
+      <div class="flag-black"></div>
+    </div>
+
+    <!-- يتم وضع المحتوى فوق الخلفية تلقائياً -->
   </div>
+
 
   <!-- صفحة الدخول -->
   <div id="login-page">
@@ -1124,11 +1186,11 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>رقم الدعوى</th>
-                <th>اسم الموكل</th>
-                <th>نوع القضية</th>
-                <th>المحكمة</th>
-                <th>الحالة</th>
+                <th>الوقت</th>
+                <th>النوع</th>
+                <th>الموضوع / الموكل</th>
+                <th>المكان / ملاحظات</th>
+                <th>الحالة / الإجراء المطلوب</th>
                 <th>إجراء</th>
               </tr>
             </thead>
@@ -2373,5 +2435,3 @@
   <script type="module" src="script.js"></script>
 </body>
 </html>
-
-
