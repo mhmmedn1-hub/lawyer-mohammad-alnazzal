@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -125,6 +125,12 @@
       border-color: rgba(212,175,55,0.35);
     }
     .case-study-icon-gold i{ color: #fde68a; }
+
+    .case-study-icon-purple{
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(59, 130, 246, 0.10));
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+    .case-study-icon-purple i{ color: #c084fc; }
 
     @media (max-width: 768px){
       .case-study-icon{ width:72px; height:72px; border-radius:22px; }
@@ -2211,8 +2217,9 @@
             <div style="display:flex; justify-content:space-between; align-items:center; gap: 15px; flex-wrap: wrap;">
               <h2 style="margin:0; color: var(--accent-green); border-bottom: 1px solid rgba(16, 185, 129, 0.2); padding-bottom: 10px;">📄 دراسة ضبط بجرم المخدرات</h2>
               <div style="display:flex; gap:10px;">
-                <button type="button" class="action-btn" style="background:#64748b;" onclick="document.getElementById('drug-case-study-form-wrapper').style.display='none'; document.getElementById('case-study-entry-card').style.display='grid';">عودة للقائمة</button>
-                <button type="button" class="action-btn" style="background:#dc2626;" onclick="exportDrugCaseStudyToPDF()">تصدير PDF 📄</button>
+                <button type="button" class="action-btn" style="background:#64748b;" onclick="document.getElementById('drug-case-study-form-wrapper').style.display='none'; document.getElementById('case-study-entry-card').style.display='grid';">عودة</button>
+                <button type="button" class="action-btn" style="background: var(--accent-gold); color:#000;" onclick="openDrugCaseStudyPreview()">معاينة 👁️</button>
+                <button type="button" class="action-btn" style="background:#dc2626;" onclick="exportDrugCaseStudyToPDF()">حفظ PDF 📄</button>
                 <button type="button" class="action-btn" style="background:var(--accent-green);" onclick="saveDrugCaseStudy()">حفظ الدراسة ✅</button>
               </div>
             </div>
@@ -2622,6 +2629,10 @@
             <button type="button" class="case-study-card" onclick="generateAgencyText('criminal')">
                 <span class="case-study-icon case-study-icon-blue"><i class="fa-solid fa-gavel"></i></span>
                 <span class="case-study-title">وكالة خاصة جزائية</span>
+            </button>
+            <button type="button" class="case-study-card" onclick="generateAgencyText('administrative')">
+                <span class="case-study-icon case-study-icon-purple"><i class="fa-solid fa-file-contract"></i></span>
+                <span class="case-study-title">وكالة خاصة إدارية</span>
             </button>
         </div>
       </section>
