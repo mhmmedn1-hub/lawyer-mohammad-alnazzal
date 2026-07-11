@@ -21,6 +21,7 @@ window.allSeparatedCases = [];
 window.allAgencies = [];
 window.allGeneralCases = [];
 window.allCaseStudies = [];
+window.allDrugCaseStudies = [];
 window.currentViewingSepId = null;
 window.currentViewingCaseId = null;
 window.currentViewingCaseType = null;
@@ -151,6 +152,10 @@ function setupFirebaseListeners() {
     window.allCaseStudies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     updateCaseStudiesTable();
     if(window.currentClient) loadClientPortalData(window.currentClient);
+  });
+  onSnapshot(collection(db, "drugCaseStudies"), (snap) => {
+    window.allDrugCaseStudies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // updateDrugCaseStudiesTable(); // Table removed as per request
   });
 }
 
@@ -2607,6 +2612,189 @@ window.openCaseStudyPreviewAndBasics = function(studyType) {
   openCaseStudyPreview();
 };
 
+// دالة لفتح نموذج دراسة ضبط المخدرات
+window.openDrugCaseStudyForm = function() {
+  // إخفاء النماذج الأخرى
+  document.getElementById('case-study-entry-card').style.display = 'none';
+  document.getElementById('case-study-form-wrapper').style.display = 'none';
+
+  // إظهار نموذج المخدرات
+  const wrapper = document.getElementById('drug-case-study-form-wrapper');
+  if (wrapper) {
+    wrapper.style.display = 'block';
+    window.editingId = null; // التأكد من أنه ليس في وضع التعديل
+    resetDrugCaseStudyForm(); // تفريغ الحقول عند الفتح
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
+// دالة لحفظ دراسة ضبط المخدرات
+window.saveDrugCaseStudy = async function() {
+  const clientName = document.getElementById('drug-client-name').value.trim();
+  if (!clientName) {
+    alert('يرجى إدخال اسم الموكل على الأقل.');
+    return;
+  }
+
+  const analysisFileInput = document.getElementById('drug-analysis-file');
+  const analysisFile = analysisFileInput.files[0];
+  let analysisImageData = null;
+  if (analysisFile) {
+    analysisImageData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(analysisFile);
+    });
+  }
+
+  // البحث عن الموكل لربط الـ ID
+  const clientObj = window.allClients.find(c => normalizeArabic(c.fullname) === normalizeArabic(clientName));
+
+  const editing = !!window.editingId;
+
+  const seizedSubstances = [];
+  if (document.querySelector('input[name="drug-seized"]:checked').value === 'yes') {
+    if (document.getElementById('drug-sub-crystal-check').checked) seizedSubstances.push({ name: 'كريستال', quantity: document.getElementById('drug-sub-crystal-qty').value });
+    if (document.getElementById('drug-sub-hashish-check').checked) seizedSubstances.push({ name: 'حشيش', quantity: document.getElementById('drug-sub-hashish-qty').value });
+    if (document.getElementById('drug-sub-captagon-check').checked) seizedSubstances.push({ name: 'كبتاغون', quantity: document.getElementById('drug-sub-captagon-qty').value });
+    if (document.getElementById('drug-sub-zolam-check').checked) seizedSubstances.push({ name: 'زولام', quantity: document.getElementById('drug-sub-zolam-qty').value });
+    if (document.getElementById('drug-sub-other-check').checked) seizedSubstances.push({ name: 'أخرى', quantity: document.getElementById('drug-sub-other-qty').value });
+  }
+
+  const studyData = {
+    clientName: clientName,
+    clientId: clientObj ? clientObj.id : null,
+    fatherName: document.getElementById('drug-client-father').value,
+    motherName: document.getElementById('drug-client-mother').value,
+    birthInfo: document.getElementById('drug-client-birth').value,
+    nationalId: document.getElementById('drug-client-nid').value,
+    registryInfo: document.getElementById('drug-client-registry').value,
+    idCard: document.getElementById('drug-client-idcard').value,
+    recordNumber: document.getElementById('drug-record-num').value,
+    recordAuthority: document.getElementById('drug-record-authority').value,
+    recordDate: document.getElementById('drug-record-date').value,
+    clientRole: document.getElementById('drug-client-role').value,
+    locations: document.getElementById('drug-locations').value,
+    wasDrugSeized: document.querySelector('input[name="drug-seized"]:checked').value === 'yes',
+    seizedSubstances: seizedSubstances,
+    analysisNumber: document.getElementById('drug-analysis-num').value,
+    analysisDate: document.getElementById('drug-analysis-date').value,
+    analysisImage: analysisImageData,
+    clientStatement: document.getElementById('drug-client-statement').value,
+    wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
+    acquittedBy: document.getElementById('drug-acquitted-by').value,
+    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num').value,
+    acquittalBaseNum: document.getElementById('drug-acquittal-base-num').value,
+    acquittalDate: document.getElementById('drug-acquittal-date').value,
+    acquittalImage: null, // Placeholder for acquittal image upload
+    mentionedByConfession: document.getElementById('drug-mentioned-by-confession').checked,
+    confessorName: document.getElementById('drug-confessor-name').value,
+    isRelativeToConfessor: document.querySelector('input[name="drug-is-relative"]:checked').value === 'yes',
+    relationshipType: document.getElementById('drug-relationship-type').value,
+    wasTraveling: document.querySelector('input[name="drug-was-traveling"]:checked').value === 'yes',
+    hasMovementStatement: document.getElementById('drug-has-movement-statement').checked,
+    movementNum: document.getElementById('drug-movement-num').value,
+    movementAuthority: document.getElementById('drug-movement-authority').value,
+    updatedAt: Date.now(),
+  };
+
+  try {
+    if (editing) {
+      await updateDoc(doc(db, "drugCaseStudies", window.editingId), studyData);
+      alert('تم تحديث دراسة ضبط المخدرات بنجاح! ✅');
+    } else {
+      await addDoc(collection(db, "drugCaseStudies"), { ...studyData, createdAt: Date.now() });
+      alert('تم حفظ دراسة ضبط المخدرات بنجاح! ✅');
+    }
+    resetDrugCaseStudyForm();
+    // العودة إلى القائمة الرئيسية بعد الحفظ
+    document.getElementById('drug-case-study-form-wrapper').style.display='none';
+    document.getElementById('case-study-entry-card').style.display='grid';
+  } catch (error) {
+    console.error("Error saving drug case study: ", error);
+    alert('حدث خطأ أثناء حفظ البيانات. يرجى مراجعة وحدة التحكم.');
+  }
+};
+
+// دالة لتفريغ حقول نموذج المخدرات
+window.resetDrugCaseStudyForm = function() {
+  const form = document.getElementById('drug-case-study-form');
+  window.editingId = null;
+  if (form) form.querySelectorAll('input[type="text"], input[type="date"], input[type="file"], textarea, select').forEach(el => el.value = '');
+  if (form) form.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+  document.querySelector('input[name="drug-seized"][value="no"]').checked = true;
+  toggleDrugSubstances(false);
+
+  // Reset new fields
+  document.querySelector('input[name="drug-acquitted"][value="no"]').checked = true;
+  toggleAcquittalFields(false);
+
+  document.getElementById('drug-mentioned-by-confession').checked = false;
+  document.getElementById('drug-confessor-name-wrapper').style.display = 'none';
+
+  document.querySelector('input[name="drug-is-relative"][value="no"]').checked = true;
+  toggleRelationshipFields(false);
+
+  document.querySelector('input[name="drug-was-traveling"][value="no"]').checked = true;
+  toggleTravelFields(false);
+
+  document.getElementById('drug-has-movement-statement').checked = false;
+  document.getElementById('drug-movement-statement-fields').style.display = 'none';
+};
+
+// دالة لإظهار أو إخفاء قائمة المواد المخدرة
+window.toggleDrugSubstances = function(show) {
+  const list = document.getElementById('drug-substances-list');
+  if (list) {
+    list.style.display = show ? 'block' : 'none';
+  }
+};
+
+// دوال لإظهار وإخفاء الحقول الشرعية الجديدة في قسم المخدرات
+window.toggleAcquittalFields = function(show) {
+  const fields = document.getElementById('drug-acquittal-fields');
+  if (fields) fields.style.display = show ? 'grid' : 'none';
+};
+
+window.toggleRelationshipFields = function(show) {
+  const fields = document.getElementById('drug-relationship-fields');
+  if (fields) fields.style.display = show ? 'block' : 'none';
+};
+
+window.toggleTravelFields = function(show) {
+  const fields = document.getElementById('drug-travel-fields');
+  if (fields) {
+    fields.style.display = show ? 'block' : 'none';
+    if (!show) { // إذا تم اختيار "لا"، أخفِ حقول بيان الحركة أيضاً
+      document.getElementById('drug-movement-statement-fields').style.display = 'none';
+    }
+  }
+}
+
+window.exportDrugCaseStudyToPDF = function() {
+  const clientName = document.getElementById('drug-client-name').value.trim() || 'موكل';
+  const element = document.getElementById('drug-case-study-form');
+
+  // إخفاء الأزرار مؤقتاً للحصول على ملف PDF نظيف
+  const buttons = element.querySelectorAll('.action-btn');
+  const fileInput = element.querySelector('input[type="file"]');
+  buttons.forEach(btn => btn.style.visibility = 'hidden');
+  if(fileInput) fileInput.style.visibility = 'hidden';
+
+  const opt = {
+    margin: 0.5,
+    filename: `دراسة_ضبط_مخدرات_${clientName}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    // إعادة إظهار الأزرار بعد انتهاء التصدير
+    buttons.forEach(btn => btn.style.visibility = 'visible');
+    if(fileInput) fileInput.style.visibility = 'visible';
+  });
+};
 
 window.closeCaseStudyPreviewModal = function() {
   document.getElementById('case-study-preview-modal').style.display = 'none';
@@ -2845,7 +3033,7 @@ window.showSection = function(sectionId) {
     'investigation-cases-section': updateInvestigationTable,
     'fees-management-section': () => { updateGlobalFeesSummary(); const cn = document.getElementById('fee-client-name').value; if(cn) updateFeesTable(cn); },
     'referral-cases-section': updateReferralTable,
-    'case-study-section': () => { resetCaseStudyForm(); updateCaseStudiesTable(); document.getElementById('case-study-entry-card').style.display = 'flex'; document.getElementById('case-study-form-wrapper').style.display = 'none'; },
+    'case-study-section': () => { resetCaseStudyForm(); updateCaseStudiesTable(); document.getElementById('case-study-entry-card').style.display = 'grid'; document.getElementById('case-study-form-wrapper').style.display = 'none'; document.getElementById('drug-case-study-form-wrapper').style.display = 'none'; },
     'sessions-management-section': () => { populateAllCasesDatalist(); updateSessionsTable(); },
     'execution-management-section': updateExecutionTable,
     'separated-cases-section': updateSeparatedCasesTable,

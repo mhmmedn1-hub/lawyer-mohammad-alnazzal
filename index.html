@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -1799,22 +1799,22 @@
             <span class="case-study-title">دراسة دعوى شرعية</span>
           </button>
 
-          <button type="button" class="case-study-card" role="listitem" data-case-study="ضبط" aria-label="دراسة ضبط">
+          <button type="button" class="case-study-card" role="listitem" data-case-study="ضبط" aria-label="دراسة ضبط" onclick="alert('سيتم إضافة هذا النموذج قريباً.');">
             <span class="case-study-icon case-study-icon-blue" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>
             <span class="case-study-title">دراسة ضبط</span>
           </button>
 
-          <button type="button" class="case-study-card" role="listitem" data-case-study="ضبط-مخدرات" aria-label="دراسة ضبط مخدرات">
+          <button type="button" class="case-study-card" role="listitem" data-case-study="ضبط-مخدرات" aria-label="دراسة ضبط مخدرات" onclick="openDrugCaseStudyForm()">
             <span class="case-study-icon case-study-icon-green" aria-hidden="true"><i class="fa-solid fa-vial-circle-check"></i></span>
             <span class="case-study-title">دراسة ضبط مخدرات</span>
           </button>
 
-          <button type="button" class="case-study-card" role="listitem" data-case-study="جزائية" aria-label="دراسة دعوى جزائية">
+          <button type="button" class="case-study-card" role="listitem" data-case-study="جزائية" aria-label="دراسة دعوى جزائية" onclick="alert('سيتم إضافة هذا النموذج قريباً.');">
             <span class="case-study-icon case-study-icon-red" aria-hidden="true"><i class="fa-solid fa-gavel"></i></span>
             <span class="case-study-title">دراسة دعوى جزائية</span>
           </button>
 
-          <button type="button" class="case-study-card" role="listitem" data-case-study="مدنية" aria-label="دراسة دعوى مدنية">
+          <button type="button" class="case-study-card" role="listitem" data-case-study="مدنية" aria-label="دراسة دعوى مدنية" onclick="alert('سيتم إضافة هذا النموذج قريباً.');">
             <span class="case-study-icon case-study-icon-gold" aria-hidden="true"><i class="fa-solid fa-building-columns"></i></span>
             <span class="case-study-title">دراسة دعوى مدنية</span>
           </button>
@@ -2184,6 +2184,125 @@
               <input type="hidden" id="case-study-docx-name">
               <input type="hidden" id="case-study-docx-data">
             </div>
+          </div>
+        </div>
+
+        <!-- نموذج دراسة ضبط المخدرات -->
+        <div id="drug-case-study-form-wrapper" style="display:none; margin-top: 18px;">
+          <div id="drug-case-study-form" class="panel-section" style="padding: 22px; background: rgba(15, 23, 42, 0.35);">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap: 15px; flex-wrap: wrap;">
+              <h2 style="margin:0; color: var(--accent-green); border-bottom: 1px solid rgba(16, 185, 129, 0.2); padding-bottom: 10px;">📄 دراسة ضبط بجرم المخدرات</h2>
+              <div style="display:flex; gap:10px;">
+                <button type="button" class="action-btn" style="background:#64748b;" onclick="document.getElementById('drug-case-study-form-wrapper').style.display='none'; document.getElementById('case-study-entry-card').style.display='grid';">عودة للقائمة</button>
+                <button type="button" class="action-btn" style="background:#dc2626;" onclick="exportDrugCaseStudyToPDF()">تصدير PDF 📄</button>
+                <button type="button" class="action-btn" style="background:var(--accent-green);" onclick="saveDrugCaseStudy()">حفظ الدراسة ✅</button>
+              </div>
+            </div>
+
+            <!-- بيانات الموكل -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-gold);">بيانات الموكل</h3>
+              <div class="form-row">
+                <div class="form-group"><label>اسم الموكل:</label><input type="text" id="drug-client-name" list="clients-datalist"></div>
+                <div class="form-group"><label>والده:</label><input type="text" id="drug-client-father"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>والدته:</label><input type="text" id="drug-client-mother"></div>
+                <div class="form-group"><label>محل وتاريخ الولادة:</label><input type="text" id="drug-client-birth"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>الرقم الوطني:</label><input type="text" id="drug-client-nid"></div>
+                <div class="form-group"><label>الأمانة والقيد:</label><input type="text" id="drug-client-registry"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>رقم الهوية:</label><input type="text" id="drug-client-idcard"></div>
+              </div>
+            </div>
+
+            <!-- معلومات الضبط -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-blue);">معلومات الضبط</h3>
+              <div class="form-row">
+                <div class="form-group"><label>رقم الضبط:</label><input type="text" id="drug-record-num"></div>
+                <div class="form-group"><label>الجهة منظمة الضبط:</label><input type="text" id="drug-record-authority"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>تاريخ الضبط:</label><input type="date" id="drug-record-date"></div>
+                <div class="form-group">
+                  <label>ذكر الموكل:</label>
+                  <select id="drug-client-role">
+                    <option value="" selected disabled>اختر صفة الموكل...</option>
+                    <option value="تعاطي">تعاطي</option>
+                    <option value="مصدر">مصدر</option>
+                    <option value="مروج">مروج</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- المواقع والمادة المخدرة -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-green);">المواقع والمادة المخدرة</h3>
+              <div class="form-group">
+                <label>المواقع المذكورة بالضبط:</label>
+                <textarea id="drug-locations" rows="3" placeholder="اكتب هنا الأماكن التي ذكرت في الضبط (مثال: منزل الموكل، مكان إلقاء القبض...)"></textarea>
+              </div>
+              <div class="form-group" style="margin-top: 15px;">
+                <label>المادة المخدرة:</label>
+                <div style="display:flex; gap: 20px; align-items:center;">
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-seized" value="yes" onchange="toggleDrugSubstances(true)"> تم ضبط مادة</label>
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-seized" value="no" onchange="toggleDrugSubstances(false)" checked> لم يتم ضبط مادة</label>
+                </div>
+              </div>
+              <div id="drug-substances-list" style="display:none; margin-top: 15px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 15px;">
+                <div class="form-row" style="align-items: center;">
+                  <label style="color:#fff;"><input type="checkbox" id="drug-sub-crystal-check" style="margin-left: 8px;"> كريستال</label>
+                  <input type="text" id="drug-sub-crystal-qty" placeholder="الكمية (غرام، حبة... إلخ)">
+                </div>
+                <div class="form-row" style="align-items: center;">
+                  <label style="color:#fff;"><input type="checkbox" id="drug-sub-hashish-check" style="margin-left: 8px;"> حشيش</label>
+                  <input type="text" id="drug-sub-hashish-qty" placeholder="الكمية (غرام، قطعة... إلخ)">
+                </div>
+                <div class="form-row" style="align-items: center;">
+                  <label style="color:#fff;"><input type="checkbox" id="drug-sub-captagon-check" style="margin-left: 8px;"> كبتاغون</label>
+                  <input type="text" id="drug-sub-captagon-qty" placeholder="الكمية (حبة)">
+                </div>
+                <div class="form-row" style="align-items: center;">
+                  <label style="color:#fff;"><input type="checkbox" id="drug-sub-zolam-check" style="margin-left: 8px;"> زولام</label>
+                  <input type="text" id="drug-sub-zolam-qty" placeholder="الكمية (حبة)">
+                </div>
+                <div class="form-row" style="align-items: center;">
+                  <label style="color:#fff;"><input type="checkbox" id="drug-sub-other-check" style="margin-left: 8px;"> أخرى</label>
+                  <input type="text" id="drug-sub-other-qty" placeholder="اسم المادة والكمية">
+                </div>
+              </div>
+            </div>
+
+            <!-- تحليل المادة المخدرة -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-blue);">هل تم إجراء تحليل للمادة المخدرة؟</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>رقم التحليل:</label>
+                  <input type="text" id="drug-analysis-num" placeholder="رقم تقرير التحليل">
+                </div>
+                <div class="form-group">
+                  <label>تاريخ التحليل:</label>
+                  <input type="date" id="drug-analysis-date">
+                </div>
+              </div>
+              <div class="form-group" style="margin-top: 15px;"><label>صورة التحليل (إن وجدت):</label><input type="file" id="drug-analysis-file" accept="image/*"></div>
+            </div>
+
+            <!-- أقوال الموكل -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-blue);">أقوال الموكل</h3>
+              <div class="form-group">
+                <label>سرد أقوال الموكل كما وردت في الضبط أو كما أفاد بها:</label>
+                <textarea id="drug-client-statement" rows="5" placeholder="اكتب هنا أقوال الموكل بالتفصيل..."></textarea>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
