@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -2298,6 +2298,24 @@
                   <div class="form-group"><label>الاسم الشائع:</label><input type="text" id="drug-analysis-common-name" placeholder="مثال: كريستال، هيروين..."></div>
                 </div>
                 <div class="form-group" style="margin-top: 15px;"><label>صورة التحليل (إن وجدت):</label><input type="file" id="drug-analysis-file" accept="image/*"></div>
+              </div>
+            </div>
+
+            <!-- قسم التبرئة القضائية -->
+            <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
+              <h3 style="margin:0 0 12px; color: var(--accent-green);">هل تم تبرئة الموكل قضائياً؟</h3>
+              <div class="form-group">
+                <div style="display:flex; gap: 20px; align-items:center;">
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-acquitted" value="yes" onchange="toggleAcquittalFields(true)"> نعم</label>
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-acquitted" value="no" onchange="toggleAcquittalFields(false)" checked> لا</label>
+                </div>
+              </div>
+              <div id="drug-acquittal-fields" style="display:none; margin-top: 15px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group"><label>المرجع القضائي:</label><input type="text" id="drug-acquitted-by-2" placeholder="مثال: محكمة الجنايات بدمشق"></div>
+                <div class="form-group"><label>رقم القرار:</label><input type="text" id="drug-acquittal-decision-num-2"></div>
+                <div class="form-group"><label>رقم الأساس:</label><input type="text" id="drug-acquittal-base-num-2"></div>
+                <div class="form-group"><label>تاريخ القرار:</label><input type="date" id="drug-acquittal-date-2"></div>
+                <div class="form-group" style="grid-column: span 2;"><label>صورة عن القرار (إن وجدت):</label><input type="file" id="drug-acquittal-file-2" accept="image/*"></div>
               </div>
             </div>
 

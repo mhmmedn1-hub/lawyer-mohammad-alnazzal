@@ -2685,16 +2685,16 @@ window.saveDrugCaseStudy = async function() {
     analysisImage: analysisImageData,
     clientStatement: document.getElementById('drug-client-statement').value,
     wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
-    acquittedBy: document.getElementById('drug-acquitted-by').value,
-    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num').value,
-    acquittalBaseNum: document.getElementById('drug-acquittal-base-num').value,
-    acquittalDate: document.getElementById('drug-acquittal-date').value,
+    acquittedBy: document.getElementById('drug-acquitted-by-2').value,
+    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num-2').value,
+    acquittalBaseNum: document.getElementById('drug-acquittal-base-num-2').value,
+    acquittalDate: document.getElementById('drug-acquittal-date-2').value,
     acquittalImage: null, // Placeholder for acquittal image upload
-    mentionedByConfession: document.getElementById('drug-mentioned-by-confession').checked,
-    confessorName: document.getElementById('drug-confessor-name').value,
-    isRelativeToConfessor: document.querySelector('input[name="drug-is-relative"]:checked').value === 'yes',
-    relationshipType: document.getElementById('drug-relationship-type').value,
-    wasTraveling: document.querySelector('input[name="drug-was-traveling"]:checked').value === 'yes',
+    mentionedByConfession: document.getElementById('drug-mentioned-by-confession')?.checked,
+    confessorName: document.getElementById('drug-confessor-name')?.value,
+    isRelativeToConfessor: document.querySelector('input[name="drug-is-relative"]:checked')?.value === 'yes',
+    relationshipType: document.getElementById('drug-relationship-type')?.value,
+    wasTraveling: document.querySelector('input[name="drug-was-traveling"]:checked')?.value === 'yes',
     hasMovementStatement: document.getElementById('drug-has-movement-statement').checked,
     movementNum: document.getElementById('drug-movement-num').value,
     movementAuthority: document.getElementById('drug-movement-authority').value,
@@ -2737,10 +2737,10 @@ window.resetDrugCaseStudyForm = function() {
   toggleAcquittalFields(false);
 
   document.getElementById('drug-mentioned-by-confession').checked = false;
-  document.getElementById('drug-confessor-name-wrapper').style.display = 'none';
+  if(document.getElementById('drug-confessor-name-wrapper')) document.getElementById('drug-confessor-name-wrapper').style.display = 'none';
 
-  document.querySelector('input[name="drug-is-relative"][value="no"]').checked = true;
-  toggleRelationshipFields(false);
+  if(document.querySelector('input[name="drug-is-relative"][value="no"]')) document.querySelector('input[name="drug-is-relative"][value="no"]').checked = true;
+  if(typeof toggleRelationshipFields === 'function') toggleRelationshipFields(false);
 
   document.querySelector('input[name="drug-was-traveling"][value="no"]').checked = true;
   toggleTravelFields(false);
@@ -2765,17 +2765,17 @@ window.toggleAnalysisFields = function(show) {
 
 // دوال لإظهار وإخفاء الحقول الشرعية الجديدة في قسم المخدرات
 window.toggleAcquittalFields = function(show) {
-  const fields = document.getElementById('drug-acquittal-fields');
+  const fields = document.getElementById('drug-acquittal-fields-2');
   if (fields) fields.style.display = show ? 'grid' : 'none';
 };
 
 window.toggleRelationshipFields = function(show) {
-  const fields = document.getElementById('drug-relationship-fields');
-  if (fields) fields.style.display = show ? 'block' : 'none';
+  const fields = document.getElementById('drug-relationship-fields-2');
+  if (fields) fields.style.display = show ? 'grid' : 'none';
 };
 
 window.toggleTravelFields = function(show) {
-  const fields = document.getElementById('drug-travel-fields');
+  const fields = document.getElementById('drug-travel-fields-2');
   if (fields) {
     fields.style.display = show ? 'block' : 'none';
     if (!show) { // إذا تم اختيار "لا"، أخفِ حقول بيان الحركة أيضاً
@@ -2784,28 +2784,122 @@ window.toggleTravelFields = function(show) {
   }
 }
 
-window.exportDrugCaseStudyToPDF = function() {
+window.exportDrugCaseStudyToPDF = async function() {
   const clientName = document.getElementById('drug-client-name').value.trim() || 'موكل';
-  const element = document.getElementById('drug-case-study-form');
 
-  // إخفاء الأزرار مؤقتاً للحصول على ملف PDF نظيف
-  const buttons = element.querySelectorAll('.action-btn');
-  const fileInput = element.querySelector('input[type="file"]');
-  buttons.forEach(btn => btn.style.visibility = 'hidden');
-  if(fileInput) fileInput.style.visibility = 'hidden';
+  // 1. جمع البيانات من النموذج
+  const data = {
+    clientName: document.getElementById('drug-client-name').value,
+    fatherName: document.getElementById('drug-client-father').value,
+    motherName: document.getElementById('drug-client-mother').value,
+    birthInfo: document.getElementById('drug-client-birth').value,
+    nationalId: document.getElementById('drug-client-nid').value,
+    registryInfo: document.getElementById('drug-client-registry').value,
+    idCard: document.getElementById('drug-client-idcard').value,
+    recordNumber: document.getElementById('drug-record-num').value,
+    recordAuthority: document.getElementById('drug-record-authority').value,
+    recordDate: document.getElementById('drug-record-date').value,
+    clientRole: document.getElementById('drug-client-role').value,
+    locations: document.getElementById('drug-locations').value,
+    wasDrugSeized: document.querySelector('input[name="drug-seized"]:checked').value === 'yes',
+    seizedSubstances: [],
+    analysisPerformed: document.querySelector('input[name="drug-analysis-performed"]:checked').value === 'yes',
+    analysisNumber: document.getElementById('drug-analysis-num').value,
+    analysisDate: document.getElementById('drug-analysis-date').value,
+    analysisDescription: document.getElementById('drug-analysis-desc').value,
+    analysisCommonName: document.getElementById('drug-analysis-common-name').value,
+    wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
+    acquittedBy: document.getElementById('drug-acquitted-by').value,
+    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num').value,
+    acquittalBaseNum: document.getElementById('drug-acquittal-base-num').value,
+    acquittalDate: document.getElementById('drug-acquittal-date').value,
+    clientStatement: document.getElementById('drug-client-statement').value,
+    mentionedByConfession: document.getElementById('drug-mentioned-by-confession').checked,
+    confessorName: document.getElementById('drug-confessor-name').value,
+    isRelativeToConfessor: document.querySelector('input[name="drug-is-relative"]:checked').value === 'yes',
+    relationshipType: document.getElementById('drug-relationship-type').value,
+    wasTraveling: document.querySelector('input[name="drug-was-traveling"]:checked').value === 'yes',
+    hasMovementStatement: document.getElementById('drug-has-movement-statement').checked,
+    movementNum: document.getElementById('drug-movement-num').value,
+    movementAuthority: document.getElementById('drug-movement-authority').value,
+  };
+
+  if (data.wasDrugSeized) {
+    if (document.getElementById('drug-sub-crystal-check').checked) data.seizedSubstances.push(`كريستال (${document.getElementById('drug-sub-crystal-qty').value})`);
+    if (document.getElementById('drug-sub-hashish-check').checked) data.seizedSubstances.push(`حشيش (${document.getElementById('drug-sub-hashish-qty').value})`);
+    if (document.getElementById('drug-sub-captagon-check').checked) data.seizedSubstances.push(`كبتاغون (${document.getElementById('drug-sub-captagon-qty').value})`);
+    if (document.getElementById('drug-sub-zolam-check').checked) data.seizedSubstances.push(`زولام (${document.getElementById('drug-sub-zolam-qty').value})`);
+    if (document.getElementById('drug-sub-other-check').checked) data.seizedSubstances.push(`أخرى (${document.getElementById('drug-sub-other-qty').value})`);
+  }
+
+  // 2. بناء HTML احترافي للتقرير
+  const reportHtml = `
+    <div style="direction: rtl; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; max-width: 800px; margin: 20px auto; color: #000; background: #fff;">
+      <div style="text-align: center; border-bottom: 2px solid #c5a059; padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="margin: 0; color: #c5a059; font-size: 2rem;">مكتب المحامي محمد النزال</h1>
+        <p style="margin: 5px 0; font-size: 1.1rem;">للمحاماة والاستشارات القانونية</p>
+        <h2 style="background: #f4f4f4; display: inline-block; padding: 10px 30px; border-radius: 8px; margin-top: 15px; color: #333; border: 1px solid #ddd; font-size: 1.5rem;">دراسة ضبط مخدرات</h2>
+      </div>
+
+      <h3 style="color: #c5a059; border-bottom: 1px solid #eee; padding-bottom: 8px;">بيانات الموكل</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 1rem;">
+        <tr><td style="padding: 8px; font-weight: bold; width: 30%;">اسم الموكل:</td><td style="padding: 8px;">${data.clientName || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">والده:</td><td style="padding: 8px;">${data.fatherName || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">والدته:</td><td style="padding: 8px;">${data.motherName || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">محل وتاريخ الولادة:</td><td style="padding: 8px;">${data.birthInfo || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">الرقم الوطني:</td><td style="padding: 8px;">${data.nationalId || '-'}</td></tr>
+      </table>
+
+      <h3 style="color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">معلومات الضبط</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 1rem;">
+        <tr><td style="padding: 8px; font-weight: bold; width: 30%;">رقم الضبط:</td><td style="padding: 8px;">${data.recordNumber || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">الجهة المنظمة:</td><td style="padding: 8px;">${data.recordAuthority || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">تاريخ الضبط:</td><td style="padding: 8px;">${data.recordDate || '-'}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">صفة الموكل:</td><td style="padding: 8px;">${data.clientRole || '-'}</td></tr>
+      </table>
+
+      <h3 style="color: #10b981; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">المادة المخدرة والتحليل</h3>
+      <p><strong>المادة المضبوطة:</strong> ${data.wasDrugSeized ? data.seizedSubstances.join('، ') || 'لم تحدد' : 'لم يتم ضبط مادة'}</p>
+      <p><strong>هل تم إجراء تحليل؟</strong> ${data.analysisPerformed ? `نعم، رقم ${data.analysisNumber} بتاريخ ${data.analysisDate}` : 'لا'}</p>
+      ${data.analysisPerformed ? `<p><strong>نتيجة التحليل:</strong> ${data.analysisDescription} (الاسم الشائع: ${data.analysisCommonName})</p>` : ''}
+
+      ${data.wasAcquitted ? `
+        <h3 style="color: #10b981; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">التبرئة القضائية</h3>
+        <p><strong>صدر قرار بالبراءة</strong> من <strong>${data.acquittedBy || '-'}</strong> برقم قرار <strong>${data.acquittalDecisionNum || '-'}</strong> وأساس <strong>${data.acquittalBaseNum || '-'}</strong> بتاريخ <strong>${data.acquittalDate || '-'}</strong>.</p>
+      ` : ''}
+
+      <h3 style="color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">أقوال الموكل</h3>
+      <div style="background: #f9f9f9; border-radius: 8px; padding: 15px; line-height: 1.6; white-space: pre-wrap;">${data.clientStatement || 'لم تسجل أقوال.'}</div>
+
+      <h3 style="color: #ef4444; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">دفوع إضافية</h3>
+      <p><strong>هل تم ذكر الموكل باعتراف آخر؟</strong> ${data.mentionedByConfession ? `نعم، من قبل: ${data.confessorName}` : 'لا'}</p>
+      ${data.mentionedByConfession ? `<p><strong>صلة القرابة بالمعترف:</strong> ${data.isRelativeToConfessor ? `نعم (${data.relationshipType})` : 'لا'}</p>` : ''}
+      <p><strong>هل كان الموكل مسافراً؟</strong> ${data.wasTraveling ? 'نعم' : 'لا'}</p>
+      ${data.wasTraveling ? `<p><strong>بيان حركة:</strong> ${data.hasMovementStatement ? `متوفر (رقم ${data.movementNum} من ${data.movementAuthority})` : 'غير متوفر'}</p>` : ''}
+
+      <div style="margin-top: 60px; text-align: left; font-size: 0.9rem; color: #444;">
+        <p>تاريخ طباعة التقرير: ${new Date().toLocaleDateString('ar-EG')}</p>
+        <p style="margin-top: 40px; font-weight: bold;">ختم وتوقيع المكتب</p>
+      </div>
+    </div>
+  `;
+
+  // 3. إنشاء عنصر مؤقت لوضعه في التقرير
+  const reportElement = document.createElement('div');
+  reportElement.innerHTML = reportHtml;
+  document.body.appendChild(reportElement); // يجب إضافته للـ DOM ليعمل html2pdf
 
   const opt = {
-    margin: 0.5,
+    margin: [0.2, 0.2, 0.2, 0.2],
     filename: `دراسة_ضبط_مخدرات_${clientName}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
+    html2canvas: { scale: 2, useCORS: true, logging: true, dpi: 192, letterRendering: true },
     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
   };
 
-  html2pdf().set(opt).from(element).save().then(() => {
-    // إعادة إظهار الأزرار بعد انتهاء التصدير
-    buttons.forEach(btn => btn.style.visibility = 'visible');
-    if(fileInput) fileInput.style.visibility = 'visible';
+  // 4. التصدير ثم إزالة العنصر المؤقت
+  html2pdf().set(opt).from(reportElement).save().then(() => {
+    document.body.removeChild(reportElement);
   });
 };
 
