@@ -2678,7 +2678,10 @@ window.saveDrugCaseStudy = async function() {
     wasDrugSeized: document.querySelector('input[name="drug-seized"]:checked').value === 'yes',
     seizedSubstances: seizedSubstances,
     analysisNumber: document.getElementById('drug-analysis-num').value,
+    analysisPerformed: document.querySelector('input[name="drug-analysis-performed"]:checked').value === 'yes',
     analysisDate: document.getElementById('drug-analysis-date').value,
+    analysisDescription: document.getElementById('drug-analysis-desc').value,
+    analysisCommonName: document.getElementById('drug-analysis-common-name').value,
     analysisImage: analysisImageData,
     clientStatement: document.getElementById('drug-client-statement').value,
     wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
@@ -2725,6 +2728,10 @@ window.resetDrugCaseStudyForm = function() {
   document.querySelector('input[name="drug-seized"][value="no"]').checked = true;
   toggleDrugSubstances(false);
 
+  document.querySelector('input[name="drug-analysis-performed"][value="no"]').checked = true;
+  toggleAnalysisFields(false);
+
+
   // Reset new fields
   document.querySelector('input[name="drug-acquitted"][value="no"]').checked = true;
   toggleAcquittalFields(false);
@@ -2748,6 +2755,12 @@ window.toggleDrugSubstances = function(show) {
   if (list) {
     list.style.display = show ? 'block' : 'none';
   }
+};
+
+// دالة لإظهار أو إخفاء حقول التحليل
+window.toggleAnalysisFields = function(show) {
+  const fields = document.getElementById('drug-analysis-fields');
+  if (fields) fields.style.display = show ? 'block' : 'none';
 };
 
 // دوال لإظهار وإخفاء الحقول الشرعية الجديدة في قسم المخدرات

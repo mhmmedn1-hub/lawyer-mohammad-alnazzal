@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -2280,18 +2280,25 @@
 
             <!-- تحليل المادة المخدرة -->
             <div style="margin-top: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; background: rgba(255,255,255,0.02);">
-              <h3 style="margin:0 0 12px; color: var(--accent-blue);">هل تم إجراء تحليل للمادة المخدرة؟</h3>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>رقم التحليل:</label>
-                  <input type="text" id="drug-analysis-num" placeholder="رقم تقرير التحليل">
-                </div>
-                <div class="form-group">
-                  <label>تاريخ التحليل:</label>
-                  <input type="date" id="drug-analysis-date">
+              <h3 style="margin:0 0 12px; color: var(--accent-blue);">تحليل المادة المخدرة</h3>
+              <div class="form-group">
+                <label>هل تم إجراء تحليل للمادة المخدرة؟</label>
+                <div style="display:flex; gap: 20px; align-items:center;">
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-analysis-performed" value="yes" onchange="toggleAnalysisFields(true)"> نعم</label>
+                  <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-analysis-performed" value="no" onchange="toggleAnalysisFields(false)" checked> لا</label>
                 </div>
               </div>
-              <div class="form-group" style="margin-top: 15px;"><label>صورة التحليل (إن وجدت):</label><input type="file" id="drug-analysis-file" accept="image/*"></div>
+              <div id="drug-analysis-fields" style="display:none; margin-top: 15px; border-top: 1px solid rgba(59, 130, 246, 0.2); padding-top: 15px;">
+                <div class="form-row">
+                  <div class="form-group"><label>رقم التحليل:</label><input type="text" id="drug-analysis-num" placeholder="رقم تقرير التحليل"></div>
+                  <div class="form-group"><label>تاريخ التحليل:</label><input type="date" id="drug-analysis-date"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>وصف المادة المخدرة:</label><input type="text" id="drug-analysis-desc" placeholder="الوصف حسب تقرير التحليل"></div>
+                  <div class="form-group"><label>الاسم الشائع:</label><input type="text" id="drug-analysis-common-name" placeholder="مثال: كريستال، هيروين..."></div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;"><label>صورة التحليل (إن وجدت):</label><input type="file" id="drug-analysis-file" accept="image/*"></div>
+              </div>
             </div>
 
             <!-- أقوال الموكل -->
