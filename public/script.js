@@ -2661,6 +2661,36 @@ window.saveDrugCaseStudy = async function() {
     if (document.getElementById('drug-sub-other-check').checked) seizedSubstances.push({ name: 'أخرى', quantity: document.getElementById('drug-sub-other-qty').value });
   }
 
+  const judicialReviewData = {
+    prosecutionNum: document.getElementById('drug-review-prosecution-num').value,
+    crimeDesc: document.getElementById('drug-review-crime-desc').value,
+    legalBasis: document.getElementById('drug-review-legal-basis').value,
+    investigator: {
+      dept: document.getElementById('drug-review-investigator-dept').value,
+      city: document.getElementById('drug-review-investigator-city').value,
+      base: document.getElementById('drug-review-investigator-base').value,
+      decisionNum: document.getElementById('drug-review-investigator-decision-num').value,
+      decisionDate: document.getElementById('drug-review-investigator-decision-date').value,
+      decisionText: document.getElementById('drug-review-investigator-decision-text').value,
+    },
+    referral: {
+      dept: document.getElementById('drug-review-referral-dept').value,
+      city: document.getElementById('drug-review-referral-city').value,
+      base: document.getElementById('drug-review-referral-base').value,
+      decisionNum: document.getElementById('drug-review-referral-decision-num').value,
+      decisionDate: document.getElementById('drug-review-referral-decision-date').value,
+      decisionText: document.getElementById('drug-review-referral-decision-text').value,
+    },
+    criminalCourt: {
+      dept: document.getElementById('drug-review-criminal-dept').value,
+      city: document.getElementById('drug-review-criminal-city').value,
+      base: document.getElementById('drug-review-criminal-base').value,
+      decisionNum: document.getElementById('drug-review-criminal-decision-num').value,
+      decisionDate: document.getElementById('drug-review-criminal-decision-date').value,
+      decisionText: document.getElementById('drug-review-criminal-decision-text').value,
+    },
+  };
+
   const studyData = {
     clientName: clientName,
     clientId: clientObj ? clientObj.id : null,
@@ -2683,6 +2713,9 @@ window.saveDrugCaseStudy = async function() {
     analysisDescription: document.getElementById('drug-analysis-desc').value,
     analysisCommonName: document.getElementById('drug-analysis-common-name').value,
     analysisImage: analysisImageData,
+    strengths: document.getElementById('drug-strengths').value,
+    weaknesses: document.getElementById('drug-weaknesses').value,
+    recommendations: document.getElementById('drug-recommendations').value,
     clientStatement: document.getElementById('drug-client-statement').value,
     wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
     acquittedBy: document.getElementById('drug-acquitted-by-2').value,
@@ -2690,6 +2723,7 @@ window.saveDrugCaseStudy = async function() {
     acquittalBaseNum: document.getElementById('drug-acquittal-base-num-2').value,
     acquittalDate: document.getElementById('drug-acquittal-date-2').value,
     acquittalImage: null, // Placeholder for acquittal image upload
+    judicialReview: judicialReviewData,
     mentionedByConfession: document.getElementById('drug-mentioned-by-confession')?.checked,
     confessorName: document.getElementById('drug-confessor-name')?.value,
     isRelativeToConfessor: document.querySelector('input[name="drug-is-relative"]:checked')?.value === 'yes',
@@ -2749,6 +2783,33 @@ window.resetDrugCaseStudyForm = function() {
   document.getElementById('drug-movement-statement-fields').style.display = 'none';
 };
 
+// Reset judicial review fields
+document.getElementById('drug-review-prosecution-num').value = '';
+document.getElementById('drug-review-crime-desc').value = '';
+document.getElementById('drug-review-legal-basis').value = '';
+document.getElementById('drug-review-investigator-dept').value = '';
+document.getElementById('drug-review-investigator-city').value = '';
+document.getElementById('drug-review-investigator-base').value = '';
+document.getElementById('drug-review-investigator-decision-num').value = '';
+document.getElementById('drug-review-investigator-decision-date').value = '';
+document.getElementById('drug-review-investigator-decision-text').value = '';
+document.getElementById('drug-review-referral-dept').value = '';
+document.getElementById('drug-review-referral-city').value = '';
+document.getElementById('drug-review-referral-base').value = '';
+document.getElementById('drug-review-referral-decision-num').value = '';
+document.getElementById('drug-review-referral-decision-date').value = '';
+document.getElementById('drug-review-referral-decision-text').value = '';
+document.getElementById('drug-review-criminal-dept').value = '';
+document.getElementById('drug-review-criminal-city').value = '';
+document.getElementById('drug-review-criminal-base').value = '';
+document.getElementById('drug-review-criminal-decision-num').value = '';
+document.getElementById('drug-review-criminal-decision-date').value = '';
+document.getElementById('drug-review-criminal-decision-text').value = '';
+
+document.getElementById('drug-strengths').value = '';
+document.getElementById('drug-weaknesses').value = '';
+document.getElementById('drug-recommendations').value = '';
+
 // دالة لإظهار أو إخفاء قائمة المواد المخدرة
 window.toggleDrugSubstances = function(show) {
   const list = document.getElementById('drug-substances-list');
@@ -2806,13 +2867,49 @@ window.exportDrugCaseStudyToPDF = async function() {
     analysisPerformed: document.querySelector('input[name="drug-analysis-performed"]:checked').value === 'yes',
     analysisNumber: document.getElementById('drug-analysis-num').value,
     analysisDate: document.getElementById('drug-analysis-date').value,
+    strengths: document.getElementById('drug-strengths').value,
+    weaknesses: document.getElementById('drug-weaknesses').value,
+    recommendations: document.getElementById('drug-recommendations').value,
     analysisDescription: document.getElementById('drug-analysis-desc').value,
     analysisCommonName: document.getElementById('drug-analysis-common-name').value,
     wasAcquitted: document.querySelector('input[name="drug-acquitted"]:checked').value === 'yes',
-    acquittedBy: document.getElementById('drug-acquitted-by').value,
-    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num').value,
-    acquittalBaseNum: document.getElementById('drug-acquittal-base-num').value,
-    acquittalDate: document.getElementById('drug-acquittal-date').value,
+    acquittedBy: document.getElementById('drug-acquitted-by-2').value,
+    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num-2').value,
+    acquittalBaseNum: document.getElementById('drug-acquittal-base-num-2').value,
+    acquittalDate: document.getElementById('drug-acquittal-date-2').value,
+    acquittedBy: document.getElementById('drug-acquitted-by-2').value, // Corrected
+    judicialReview: {
+      prosecutionNum: document.getElementById('drug-review-prosecution-num').value,
+      crimeDesc: document.getElementById('drug-review-crime-desc').value,
+      legalBasis: document.getElementById('drug-review-legal-basis').value,
+      investigator: {
+        dept: document.getElementById('drug-review-investigator-dept').value,
+        city: document.getElementById('drug-review-investigator-city').value,
+        base: document.getElementById('drug-review-investigator-base').value,
+        decisionNum: document.getElementById('drug-review-investigator-decision-num').value,
+        decisionDate: document.getElementById('drug-review-investigator-decision-date').value,
+        decisionText: document.getElementById('drug-review-investigator-decision-text').value,
+      },
+      referral: {
+        dept: document.getElementById('drug-review-referral-dept').value,
+        city: document.getElementById('drug-review-referral-city').value,
+        base: document.getElementById('drug-review-referral-base').value,
+        decisionNum: document.getElementById('drug-review-referral-decision-num').value,
+        decisionDate: document.getElementById('drug-review-referral-decision-date').value,
+        decisionText: document.getElementById('drug-review-referral-decision-text').value,
+      },
+      criminalCourt: {
+        dept: document.getElementById('drug-review-criminal-dept').value,
+        city: document.getElementById('drug-review-criminal-city').value,
+        base: document.getElementById('drug-review-criminal-base').value,
+        decisionNum: document.getElementById('drug-review-criminal-decision-num').value,
+        decisionDate: document.getElementById('drug-review-criminal-decision-date').value,
+        decisionText: document.getElementById('drug-review-criminal-decision-text').value,
+      },
+    },
+    acquittalDecisionNum: document.getElementById('drug-acquittal-decision-num-2').value, // Corrected
+    acquittalBaseNum: document.getElementById('drug-acquittal-base-num-2').value, // Corrected
+    acquittalDate: document.getElementById('drug-acquittal-date-2').value, // Corrected
     clientStatement: document.getElementById('drug-client-statement').value,
     mentionedByConfession: document.getElementById('drug-mentioned-by-confession').checked,
     confessorName: document.getElementById('drug-confessor-name').value,
@@ -2870,6 +2967,41 @@ window.exportDrugCaseStudyToPDF = async function() {
 
       <h3 style="color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">أقوال الموكل</h3>
       <div style="background: #f9f9f9; border-radius: 8px; padding: 15px; line-height: 1.6; white-space: pre-wrap;">${data.clientStatement || 'لم تسجل أقوال.'}</div>
+
+      <h3 style="color: #a855f7; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">التحليل القانوني</h3>
+      <p><strong>نقاط القوة:</strong></p>
+      <div style="background: #f9f9f9; border-radius: 8px; padding: 15px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 15px;">${data.strengths || 'لم تسجل.'}</div>
+      <p><strong>نقاط الضعف:</strong></p>
+      <div style="background: #f9f9f9; border-radius: 8px; padding: 15px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 15px;">${data.weaknesses || 'لم تسجل.'}</div>
+      <p><strong>التوصيات:</strong></p>
+      <div style="background: #f9f9f9; border-radius: 8px; padding: 15px; line-height: 1.6; white-space: pre-wrap;">${data.recommendations || 'لم تسجل.'}</div>
+
+      <h3 style="color: #3b82f6; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">المراجعة القضائية</h3>
+      <p><strong>رقم وارد النيابة العامة:</strong> ${data.judicialReview.prosecutionNum || '-'}</p>
+      <p><strong>الوصف الجرمي:</strong> ${data.judicialReview.crimeDesc || '-'}</p>
+      <p><strong>المستند القانوني:</strong> ${data.judicialReview.legalBasis || '-'}</p>
+
+      <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+        <h4 style="margin:0 0 10px; color:#333;">قاضي التحقيق</h4>
+        <p><strong>الدائرة:</strong> ${data.judicialReview.investigator.dept || '-'} في ${data.judicialReview.investigator.city || '-'}</p>
+        <p><strong>الأساس:</strong> ${data.judicialReview.investigator.base || '-'} | <strong>القرار:</strong> ${data.judicialReview.investigator.decisionNum || '-'} | <strong>التاريخ:</strong> ${data.judicialReview.investigator.decisionDate || '-'}</p>
+        <p><strong>منطوق القرار:</strong> ${data.judicialReview.investigator.decisionText || '-'}</p>
+      </div>
+
+      <div style="margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+        <h4 style="margin:0 0 10px; color:#333;">قاضي الإحالة</h4>
+        <p><strong>الدائرة:</strong> ${data.judicialReview.referral.dept || '-'} في ${data.judicialReview.referral.city || '-'}</p>
+        <p><strong>الأساس:</strong> ${data.judicialReview.referral.base || '-'} | <strong>القرار:</strong> ${data.judicialReview.referral.decisionNum || '-'} | <strong>التاريخ:</strong> ${data.judicialReview.referral.decisionDate || '-'}</p>
+        <p><strong>منطوق القرار:</strong> ${data.judicialReview.referral.decisionText || '-'}</p>
+      </div>
+
+      <div style="margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+        <h4 style="margin:0 0 10px; color:#333;">محكمة الجنايات</h4>
+        <p><strong>الدائرة:</strong> ${data.judicialReview.criminalCourt.dept || '-'} في ${data.judicialReview.criminalCourt.city || '-'}</p>
+        <p><strong>الأساس:</strong> ${data.judicialReview.criminalCourt.base || '-'} | <strong>القرار:</strong> ${data.judicialReview.criminalCourt.decisionNum || '-'} | <strong>التاريخ:</strong> ${data.judicialReview.criminalCourt.decisionDate || '-'}</p>
+        <p><strong>منطوق الحكم:</strong> ${data.judicialReview.criminalCourt.decisionText || '-'}</p>
+      </div>
+
 
       <h3 style="color: #ef4444; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 25px;">دفوع إضافية</h3>
       <p><strong>هل تم ذكر الموكل باعتراف آخر؟</strong> ${data.mentionedByConfession ? `نعم، من قبل: ${data.confessorName}` : 'لا'}</p>

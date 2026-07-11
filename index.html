@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -2310,12 +2310,12 @@
                   <label style="cursor:pointer; color:#fff;"><input type="radio" name="drug-acquitted" value="no" onchange="toggleAcquittalFields(false)" checked> لا</label>
                 </div>
               </div>
-              <div id="drug-acquittal-fields" style="display:none; margin-top: 15px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div id="drug-acquittal-fields-2" style="display:none; margin-top: 15px; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 15px; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="form-group"><label>المرجع القضائي:</label><input type="text" id="drug-acquitted-by-2" placeholder="مثال: محكمة الجنايات بدمشق"></div>
                 <div class="form-group"><label>رقم القرار:</label><input type="text" id="drug-acquittal-decision-num-2"></div>
                 <div class="form-group"><label>رقم الأساس:</label><input type="text" id="drug-acquittal-base-num-2"></div>
                 <div class="form-group"><label>تاريخ القرار:</label><input type="date" id="drug-acquittal-date-2"></div>
-                <div class="form-group" style="grid-column: span 2;"><label>صورة عن القرار (إن وجدت):</label><input type="file" id="drug-acquittal-file-2" accept="image/*"></div>
+                <div class="form-group" style="grid-column: span 2;"><label>صورة عن القرار (إن وجدت):</label><input type="file" id="drug-acquittal-file-2" accept="image/*,application/pdf"></div>
               </div>
             </div>
 
@@ -2328,7 +2328,103 @@
               </div>
             </div>
 
+            <!-- قسم التحليل القانوني -->
+            <div style="margin-top: 18px; border: 1px solid rgba(168, 85, 247, 0.18); border-radius: 18px; padding: 18px; background: rgba(168, 85, 247, 0.04);">
+              <h3 style="margin:0 0 12px; color: #a855f7;">التحليل القانوني والتوصيات</h3>
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label>نقاط القوة في القضية:</label>
+                <textarea id="drug-strengths" rows="4" placeholder="اكتب هنا نقاط القوة التي يمكن الاستناد إليها..."></textarea>
+              </div>
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label>نقاط الضعف في القضية:</label>
+                <textarea id="drug-weaknesses" rows="4" placeholder="اكتب هنا نقاط الضعف التي يجب الانتباه لها..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>التوصيات والإجراءات المقترحة:</label>
+                <textarea id="drug-recommendations" rows="4" placeholder="اكتب هنا توصياتك للمحامي أو الإجراءات التالية..."></textarea>
+              </div>
+            </div>
+
+            <!-- قسم المراجعة القضائية -->
+            <div style="margin-top: 18px; border: 1px solid rgba(59, 130, 246, 0.18); border-radius: 18px; padding: 18px; background: rgba(59, 130, 246, 0.04);">
+              <h3 style="margin:0 0 12px; color: var(--accent-blue);">المراجعة القضائية</h3>
+              <div class="form-row">
+                <div class="form-group"><label>رقم وارد النيابة العامة:</label><input type="text" id="drug-review-prosecution-num"></div>
+                <div class="form-group"><label>الوصف الجرمي:</label><input type="text" id="drug-review-crime-desc"></div>
+              </div>
+              <div class="form-group" style="margin-top: 15px;"><label>المستند القانوني:</label><input type="text" id="drug-review-legal-basis"></div>
+
+              <!-- قاضي التحقيق -->
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed rgba(59, 130, 246, 0.2);">
+                <h4 style="text-align: center; margin: 0 0 15px; color: #fff;">قاضي التحقيق</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>دائرة التحقيق:</label>
+                    <select id="drug-review-investigator-dept">
+                      <option value="" selected disabled>اختر الدائرة</option>
+                      <option value="الاولى">الاولى</option><option value="الثانية">الثانية</option><option value="الثالثة">الثالثة</option>
+                      <option value="الرابعة">الرابعة</option><option value="الخامسة">الخامسة</option><option value="السادسة">السادسة</option>
+                      <option value="السابعة">السابعة</option><option value="الثامنة">الثامنة</option><option value="العاشرة">العاشرة</option>
+                      <option value="الحادية عشر">الحادية عشر</option><option value="الثانية عشر">الثانية عشر</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>المدينة:</label><input type="text" id="drug-review-investigator-city"></div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                  <div class="form-group"><label>رقم الأساس:</label><input type="text" id="drug-review-investigator-base"></div>
+                  <div class="form-group"><label>رقم القرار:</label><input type="text" id="drug-review-investigator-decision-num"></div>
+                  <div class="form-group"><label>تاريخ القرار:</label><input type="date" id="drug-review-investigator-decision-date"></div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;"><label>منطوق القرار:</label><textarea id="drug-review-investigator-decision-text" rows="3"></textarea></div>
+              </div>
+
+              <!-- قاضي الإحالة -->
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed rgba(59, 130, 246, 0.2);">
+                <h4 style="text-align: center; margin: 0 0 15px; color: #fff;">قاضي الإحالة</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>دائرة الإحالة:</label>
+                    <select id="drug-review-referral-dept">
+                      <option value="" selected disabled>اختر الدائرة</option>
+                      <option value="الاولى">الاولى</option><option value="الثانية">الثانية</option><option value="الثالثة">الثالثة</option>
+                      <option value="الرابعة">الرابعة</option><option value="الخامسة">الخامسة</option><option value="السادسة">السادسة</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>المدينة:</label><input type="text" id="drug-review-referral-city"></div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                  <div class="form-group"><label>رقم الأساس:</label><input type="text" id="drug-review-referral-base"></div>
+                  <div class="form-group"><label>رقم القرار:</label><input type="text" id="drug-review-referral-decision-num"></div>
+                  <div class="form-group"><label>تاريخ القرار:</label><input type="date" id="drug-review-referral-decision-date"></div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;"><label>منطوق القرار:</label><textarea id="drug-review-referral-decision-text" rows="3"></textarea></div>
+              </div>
+
+              <!-- محكمة الجنايات -->
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed rgba(59, 130, 246, 0.2);">
+                <h4 style="text-align: center; margin: 0 0 15px; color: #fff;">محكمة الجنايات</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>دائرة الجنايات:</label>
+                    <select id="drug-review-criminal-dept"><option value="" selected disabled>اختر الدائرة</option><option value="الاولى">الاولى</option><option value="الثانية">الثانية</option><option value="الثالثة">الثالثة</option></select>
+                  </div>
+                  <div class="form-group"><label>المدينة:</label><input type="text" id="drug-review-criminal-city"></div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                  <div class="form-group"><label>رقم الأساس:</label><input type="text" id="drug-review-criminal-base"></div>
+                  <div class="form-group"><label>رقم القرار:</label><input type="text" id="drug-review-criminal-decision-num"></div>
+                  <div class="form-group"><label>تاريخ الحكم:</label><input type="date" id="drug-review-criminal-decision-date"></div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;"><label>منطوق الحكم:</label><textarea id="drug-review-criminal-decision-text" rows="3"></textarea></div>
+              </div>
+            </div>
+
           </div>
+        </div>
+        <!-- قسم الدفوع الإضافية -->
+        <div id="drug-additional-defenses" style="margin-top: 18px; border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 18px; padding: 18px; background: rgba(239,68,68,0.02);">
+          <h3 style="margin:0 0 12px; color: var(--accent-red);">دفوع إضافية</h3>
+          <!-- ... المحتوى هنا ... -->
         </div>
       </section>
 
