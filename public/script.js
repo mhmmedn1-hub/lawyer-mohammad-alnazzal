@@ -38,6 +38,7 @@ window.normalizeArabic = function(text) {
   if (!text) return "";
   return text.toString()
     .trim()
+    .normalize('NFC') // Add Unicode normalization
     .replace(/[\u064B-\u0652\u0670\u0674\u06D6-\u06ED]/g, '') // remove Arabic diacritics
     .replace(/ـ/g, '') // remove tatweel
     .replace(/[أإآ]/g, 'ا')
@@ -54,6 +55,7 @@ window.normalizeLoginValue = function(value) {
   return value.toString()
     .trim()
     .toLowerCase()
+    .normalize('NFC') // Add Unicode normalization
     .replace(/[\u064B-\u0652\u0670\u0674\u06D6-\u06ED]/g, '')
     .replace(/ـ/g, '')
     .replace(/[أإآ]/g, 'ا')
@@ -62,7 +64,7 @@ window.normalizeLoginValue = function(value) {
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
     .replace(/[\u0660-\u0669]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0660))
-    .replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z0-9]/g, '');
+    .replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z0-9\s]/g, '');
 };
 
 window.togglePasswordVisibility = function(inputId, iconEl) {
@@ -168,6 +170,7 @@ window.handleLawyerLogin = function() {
   const normalizedInput = normalizeLoginValue(userVal);
   const validLawyerNames = [
     'محمدالنزال',
+    'محمد النزال',
     'محمالنزال',
     'محمد',
     'النزال',
@@ -182,8 +185,7 @@ window.handleLawyerLogin = function() {
   // مثال:
   // validLawyerNames.push('اسم_المحامي');
 
-  const matchesSpecialCase = normalizedInput.includes('محم') && normalizedInput.includes('النزال');
-  const isLawyerUser = validLawyerNames.includes(normalizedInput) || matchesSpecialCase || normalizedInput === 'admin';
+  const isLawyerUser = validLawyerNames.includes(normalizedInput) || normalizedInput === 'admin';
   const isCorrectPassword = passVal === '6503536';
 
   if (isLawyerUser && isCorrectPassword) {
@@ -1799,6 +1801,8 @@ window.saveCaseStudy = async function() {
   const disputeInfo = gatherDisputeData();
   const claimsInfo = gatherClaimsData();
   const mukhalaaInfo = gatherMukhalaaData();
+  const evidenceInfo = gatherEvidenceData();
+  const meansOfProofInfo = gatherMeansOfProofData(); // Gather new data
   const husbandName = spouseInfo.husband.name || '';
   const wifeName = spouseInfo.wife.name || '';
   const plaintiff = spouseInfo.plaintiff || 'husband';
@@ -1836,6 +1840,9 @@ window.saveCaseStudy = async function() {
     children: childrenInfo,
     dispute: disputeInfo,
     claims: claimsInfo,
+    evidence: evidenceInfo,
+    meansOfProof: meansOfProofInfo, // Save new data
+    meansOfProof: meansOfProofInfo,
     mukhalaa: mukhalaaInfo,
     studyType: 'شرعية',
     updatedAt: Date.now(),
@@ -1946,6 +1953,26 @@ window.resetCaseStudyForm = function() {
   document.getElementById('mahr-modification-details').style.display = 'none';
   document.getElementById('claim-spousal-support-date').value = '';
   document.getElementById('claim-spousal-support-type').value = 'كفاية';
+
+  // Reset evidence
+  document.getElementById('evidence-marriage-contract').checked = false;
+  document.getElementById('evidence-family-statement').checked = false;
+  document.getElementById('evidence-marriage-statement').checked = false;
+  document.getElementById('evidence-witnesses').checked = false;
+  document.getElementById('evidence-medical-reports').checked = false;
+  document.getElementById('evidence-police-records').checked = false;
+  document.getElementById('evidence-invoices').checked = false;
+  document.getElementById('evidence-trousseau-list').checked = false;
+  document.getElementById('evidence-acknowledgement').checked = false;
+
+  // Reset new means of proof
+  document.getElementById('proof-acknowledgement').checked = false;
+  document.getElementById('proof-witnesses').checked = false;
+  document.getElementById('proof-decisive-oath').checked = false;
+  document.getElementById('proof-manifestation-oath').checked = false;
+  document.getElementById('proof-supplementary-oath').checked = false;
+  document.getElementById('proof-medical-reports').checked = false;
+  document.getElementById('proof-police-records').checked = false;
   // Also reset mahr modification fields if they have their own reset logic, but resetting the form should suffice.
 
 };
@@ -2128,6 +2155,33 @@ function gatherClaimsData() {
   };
 }
 
+// Gather means of proof data from the new form section
+function gatherMeansOfProofData() {
+  return {
+    acknowledgement: document.getElementById('proof-acknowledgement').checked,
+    witnesses: document.getElementById('proof-witnesses').checked,
+    decisiveOath: document.getElementById('proof-decisive-oath').checked,
+    manifestationOath: document.getElementById('proof-manifestation-oath').checked,
+    supplementaryOath: document.getElementById('proof-supplementary-oath').checked,
+    medicalReports: document.getElementById('proof-medical-reports').checked,
+    policeRecords: document.getElementById('proof-police-records').checked,
+  };
+}
+
+// Gather evidence data from the form
+function gatherEvidenceData() {
+  return {
+    marriageContract: document.getElementById('evidence-marriage-contract').checked,
+    familyStatement: document.getElementById('evidence-family-statement').checked,
+    marriageStatement: document.getElementById('evidence-marriage-statement').checked,
+    witnesses: document.getElementById('evidence-witnesses').checked,
+    medicalReports: document.getElementById('evidence-medical-reports').checked,
+    policeRecords: document.getElementById('evidence-police-records').checked,
+    invoices: document.getElementById('evidence-invoices').checked,
+    trousseauList: document.getElementById('evidence-trousseau-list').checked,
+    acknowledgement: document.getElementById('evidence-acknowledgement').checked,
+  };
+}
 // Populate children table from saved data
 function populateChildrenTable(children = []) {
   const tableBody = document.getElementById('children-table').querySelector('tbody');
@@ -2284,6 +2338,9 @@ window.viewCaseStudy = function(id) {
   const children = c.children || [];
   const claims = c.claims || {};
   const dispute = c.dispute || {};
+  const evidence = c.evidence || {};
+  const meansOfProof = c.meansOfProof || {};
+
   const shariaCaseType = c.shariaCaseType || '';
   const mukhalaa = c.mukhalaa || null;
   const conditions = marriageContract.conditions || {};
@@ -2411,6 +2468,27 @@ window.viewCaseStudy = function(id) {
   document.getElementById('dispute-witnesses').checked = dispute.hasWitnesses || false;
   document.getElementById('dispute-other-reasons').value = dispute.otherReasons || '';
 
+  // Populate evidence
+  document.getElementById('evidence-marriage-contract').checked = evidence.marriageContract || false;
+  document.getElementById('evidence-family-statement').checked = evidence.familyStatement || false;
+  document.getElementById('evidence-marriage-statement').checked = evidence.marriageStatement || false;
+  document.getElementById('evidence-witnesses').checked = evidence.witnesses || false;
+  document.getElementById('evidence-medical-reports').checked = evidence.medicalReports || false;
+  document.getElementById('evidence-police-records').checked = evidence.policeRecords || false;
+  document.getElementById('evidence-invoices').checked = evidence.invoices || false;
+  document.getElementById('evidence-trousseau-list').checked = evidence.trousseauList || false;
+  document.getElementById('evidence-acknowledgement').checked = evidence.acknowledgement || false;
+
+  // Populate new means of proof
+  document.getElementById('proof-acknowledgement').checked = meansOfProof.acknowledgement || false;
+  document.getElementById('proof-witnesses').checked = meansOfProof.witnesses || false;
+  document.getElementById('proof-decisive-oath').checked = meansOfProof.decisiveOath || false;
+  document.getElementById('proof-manifestation-oath').checked = meansOfProof.manifestationOath || false;
+  document.getElementById('proof-supplementary-oath').checked = meansOfProof.supplementaryOath || false;
+  document.getElementById('proof-medical-reports').checked = meansOfProof.medicalReports || false;
+  document.getElementById('proof-police-records').checked = meansOfProof.policeRecords || false;
+
+
   openCaseStudyPreview();
 };
 
@@ -2426,6 +2504,8 @@ window.editCaseStudy = function(id) {
   const children = c.children || [];
   const claims = c.claims || {};
   const dispute = c.dispute || {};
+  const evidence = c.evidence || {};
+  const meansOfProof = c.meansOfProof || {};
   const shariaCaseType = c.shariaCaseType || '';
   const mukhalaa = c.mukhalaa || null;
   const conditions = marriageContract.conditions || {};
@@ -2551,6 +2631,26 @@ window.editCaseStudy = function(id) {
   document.getElementById('dispute-evidence').checked = dispute.hasElectronicEvidence || false;
   document.getElementById('dispute-witnesses').checked = dispute.hasWitnesses || false;
   document.getElementById('dispute-other-reasons').value = dispute.otherReasons || '';
+
+  // Populate evidence
+  document.getElementById('evidence-marriage-contract').checked = evidence.marriageContract || false;
+  document.getElementById('evidence-family-statement').checked = evidence.familyStatement || false;
+  document.getElementById('evidence-marriage-statement').checked = evidence.marriageStatement || false;
+  document.getElementById('evidence-witnesses').checked = evidence.witnesses || false;
+  document.getElementById('evidence-medical-reports').checked = evidence.medicalReports || false;
+  document.getElementById('evidence-police-records').checked = evidence.policeRecords || false;
+  document.getElementById('evidence-invoices').checked = evidence.invoices || false;
+  document.getElementById('evidence-trousseau-list').checked = evidence.trousseauList || false;
+  document.getElementById('evidence-acknowledgement').checked = evidence.acknowledgement || false;
+
+  // Populate new means of proof
+  document.getElementById('proof-acknowledgement').checked = meansOfProof.acknowledgement || false;
+  document.getElementById('proof-witnesses').checked = meansOfProof.witnesses || false;
+  document.getElementById('proof-decisive-oath').checked = meansOfProof.decisiveOath || false;
+  document.getElementById('proof-manifestation-oath').checked = meansOfProof.manifestationOath || false;
+  document.getElementById('proof-supplementary-oath').checked = meansOfProof.supplementaryOath || false;
+  document.getElementById('proof-medical-reports').checked = meansOfProof.medicalReports || false;
+  document.getElementById('proof-police-records').checked = meansOfProof.policeRecords || false;
 
   document.querySelector('#case-study-form .action-btn').textContent = 'تحديث الدراسة';
   document.getElementById('case-study-form-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3276,6 +3376,7 @@ window.showSection = function(sectionId) {
     'sessions-management-section': () => { populateAllCasesDatalist(); updateSessionsTable(); },
     'execution-management-section': updateExecutionTable,
     'separated-cases-section': updateSeparatedCasesTable,
+    'admin-work-section': () => {}, // No loader needed for now
     'messages-management-section': updateMessagesTable,
     'case-management-section': () => { resetGeneralCaseForm(); updateGeneralCasesTable(); }
   };
@@ -3845,18 +3946,47 @@ window.sendTomorrowSessionReminders = function() {
 
 // Initial setup on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Load remembered lawyer login
-  if (localStorage.getItem('lawyer_remember') === 'true') {
-    document.getElementById('lawyer-user').value = localStorage.getItem('lawyer_user') || '';
-    document.getElementById('lawyer-pass').value = localStorage.getItem('lawyer_pass') || '';
-    document.getElementById('lawyer-remember').checked = true;
-  }
+    // Load remembered lawyer login
+    if (localStorage.getItem('lawyer_remember') === 'true') {
+        const userEl = document.getElementById('lawyer-user');
+        const passEl = document.getElementById('lawyer-pass');
+        const rememberEl = document.getElementById('lawyer-remember');
+        if (userEl) userEl.value = localStorage.getItem('lawyer_user') || '';
+        if (passEl) passEl.value = localStorage.getItem('lawyer_pass') || '';
+        if (rememberEl) rememberEl.checked = true;
+    }
 
-  // Start Firebase listeners
-  setupFirebaseListeners();
-  // Setup navigation event listeners
-  setupNavigation();
+    // Start Firebase listeners
+    setupFirebaseListeners();
+    // Setup navigation event listeners
+    setupNavigation();
 
-  // Initial data load for dashboard (if already logged in or after login)
-  // This will be triggered by showSection('dashboard-overview-section') after successful login
+    // Attach login handlers
+    const lawyerLoginBtn = document.getElementById('lawyer-login-btn');
+    if (lawyerLoginBtn) {
+        lawyerLoginBtn.addEventListener('click', window.handleLawyerLogin);
+    }
+
+    const clientLoginBtn = document.getElementById('client-login-btn');
+    if (clientLoginBtn) {
+        clientLoginBtn.addEventListener('click', window.handleClientLogin);
+    }
+
+    // Attach password visibility toggles
+    const lawyerPassToggle = document.getElementById('lawyer-pass-toggle');
+    if (lawyerPassToggle) {
+        lawyerPassToggle.addEventListener('click', () => window.togglePasswordVisibility('lawyer-pass', lawyerPassToggle));
+    }
+
+    const clientPassToggle = document.getElementById('client-pass-toggle');
+    if (clientPassToggle) {
+        clientPassToggle.addEventListener('click', () => window.togglePasswordVisibility('client-pass', clientPassToggle));
+    }
+
+    const cPassToggle = document.querySelector('#client-form .toggle-password');
+    if (cPassToggle) {
+        cPassToggle.addEventListener('click', () => window.togglePasswordVisibility('c-password', cPassToggle));
+    }
+    // Initial data load for dashboard (if already logged in or after login)
+    // This will be triggered by showSection('dashboard-overview-section') after successful login
 });

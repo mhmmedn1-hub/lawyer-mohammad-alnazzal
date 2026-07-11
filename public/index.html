@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -1148,6 +1148,7 @@
       <div class="nav-item" data-target="daily-work-section" style="background: rgba(212, 175, 55, 0.1); border-right: 4px solid var(--accent-gold);">📅 جلسة عمل اليومية</div>
       <div class="nav-item" data-target="potential-clients-section">📅 دفتر المواعيد</div>
       <div class="nav-item" data-target="case-management-section">📂 إدارة القضايا</div>
+      <div class="nav-item" data-target="admin-work-section">📋 أعمال إدارية</div>
       <div class="nav-item" data-target="clients-management-section">👤 الموكلين</div>
       <div class="nav-item" data-target="agencies-management-section">📜 الوكالات</div>
       <div class="nav-item" data-target="investigation-cases-section">🔍 قضايا التحقيق</div>
@@ -1162,6 +1163,50 @@
     </aside>
 
     <main class="main-content">
+      <!-- قسم الأعمال الإدارية -->
+      <section id="admin-work-section" class="panel-section" style="display: none;">
+        <h2 style="margin-top: 0;">إدارة الأعمال الإدارية</h2>
+        <form class="case-form" id="admin-work-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="admin-work-type">نوع العمل الإداري</label>
+              <select id="admin-work-type" required>
+                <option value="" disabled selected>اختر نوع العمل...</option>
+                <option value="مراجعة دائرة حكومية">مراجعة دائرة حكومية</option>
+                <option value="تقديم طلب">تقديم طلب</option>
+                <option value="متابعة معاملة">متابعة معاملة</option>
+                <option value="استخراج وثائق">استخراج وثائق</option>
+                <option value="أخرى">أخرى</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="admin-work-client">اسم الموكل (اختياري)</label>
+              <input type="text" id="admin-work-client" list="clients-datalist" placeholder="اربط العمل بموكل إن وجد...">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="admin-work-department">الجهة / الدائرة</label>
+              <input type="text" id="admin-work-department" placeholder="مثال: مديرية المالية، السجل المدني..." required>
+            </div>
+             <div class="form-group">
+              <label for="admin-work-status">الحالة</label>
+              <select id="admin-work-status" required>
+                <option value="جديدة">جديدة</option>
+                <option value="قيد التنفيذ">قيد التنفيذ</option>
+                <option value="مكتملة">مكتملة</option>
+                <option value="مؤجلة">مؤجلة</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="admin-work-details">تفاصيل المهمة</label>
+            <textarea id="admin-work-details" rows="3" placeholder="اكتب وصفاً كاملاً للمهمة الإدارية المطلوبة..." required></textarea>
+          </div>
+          <button type="button" class="action-btn" style="margin-top: 20px;" onclick="alert('سيتم تفعيل الحفظ قريباً')">حفظ المهمة الإدارية</button>
+        </form>
+      </section>
+
       <!-- قسم لوحة التحكم الرئيسية (Overview) -->
       <section id="dashboard-overview-section">
         <header class="dashboard-header">
@@ -1956,22 +2001,19 @@
         </div>
       </div>
 
-      <div style="margin-top: 18px; display:none;">
+      <div style="margin-top: 18px;">
 
               <div style="border: 1px solid rgba(59,130,246,0.18); border-radius: 16px; padding: 16px; background: rgba(59,130,246,0.04);">
                 <h3 style="margin:0 0 12px; color: var(--accent-blue);">تفاصيل إضافية</h3>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                  <div style="display:grid; gap: 10px;">
-                    <input id="husband-birth" type="hidden" disabled>
-                    <input id="husband-health" type="text" placeholder="الوضع الصحي (للزوج)">
-                    <input id="husband-finance" type="text" placeholder="الوضع المالي (للزوج)">
-                    <textarea id="husband-address" rows="3" placeholder="محل الإقامة بالتفصيل (للزوج)"></textarea>
+                  <div class="form-group">
+                    <label for="husband-phone">هاتف الزوج</label>
+                    <input id="husband-phone" type="tel" placeholder="رقم هاتف الزوج">
                   </div>
-                  <div style="display:grid; gap: 10px;">
-                    <input id="wife-health" type="text" placeholder="الوضع الصحي (للزوجة)">
-                    <input id="wife-finance" type="text" placeholder="الوضع المالي (للزوجة)">
-                    <textarea id="wife-address" rows="3" placeholder="محل الإقامة بالتفصيل (للزوجة)"></textarea>
+                  <div class="form-group">
+                    <label for="wife-phone">هاتف الزوجة</label>
+                    <input id="wife-phone" type="tel" placeholder="رقم هاتف الزوجة">
                   </div>
                 </div>
               </div>
